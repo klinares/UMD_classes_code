@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Clustering and PCA</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="ClusteringAndPCA_files/libs/clipboard/clipboard.min.js"></script>
+<script src="ClusteringAndPCA_files/libs/quarto-html/quarto.js"></script>
+<script src="ClusteringAndPCA_files/libs/quarto-html/popper.min.js"></script>
+<script src="ClusteringAndPCA_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="ClusteringAndPCA_files/libs/quarto-html/anchor.min.js"></script>
+<link href="ClusteringAndPCA_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="ClusteringAndPCA_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="ClusteringAndPCA_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="ClusteringAndPCA_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="ClusteringAndPCA_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Clustering and PCA</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RSocrata)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(censusapi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'censusapi'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:methods':
+
+    getFunction</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+✔ purrr     1.0.2     </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'magrittr'
+
+The following object is masked from 'package:purrr':
+
+    set_names
+
+The following object is masked from 'package:tidyr':
+
+    extract</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggmap)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ Google's Terms of Service: &lt;https://mapsplatform.google.com&gt;
+  Stadia Maps' Terms of Service: &lt;https://stadiamaps.com/terms-of-service/&gt;
+  OpenStreetMap's Tile Usage Policy: &lt;https://operations.osmfoundation.org/policies/tiles/&gt;
+ℹ Please cite ggmap if you use it! Use `citation("ggmap")` for details.
+
+Attaching package: 'ggmap'
+
+
+The following object is masked from 'package:magrittr':
+
+    inset</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>corrplot 0.95 loaded</code></pre>
+</div>
+</div>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>In the first part of this notebook, we use the Chicago crime data that is provided via the Socrata API. This data “… is extracted from the Chicago Police Department’s CLEAR (Citizen Law Enforcement Analysis and Reporting) system.” Here we only pull in data from January 2018.</p>
+<p>Source: <a href="https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2" class="uri">https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2</a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cc_2018 <span class="ot">&lt;-</span> <span class="fu">read.socrata</span>(<span class="st">"https://data.cityofchicago.org/resource/6zsd-86xi.json?$where=date between '2018-01-01' and '2018-01-31'"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>cc_2018<span class="sc">$</span>arrest <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(cc_2018<span class="sc">$</span>arrest)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>cc_2018<span class="sc">$</span>latitude <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(cc_2018<span class="sc">$</span>latitude)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>cc_2018<span class="sc">$</span>longitude <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(cc_2018<span class="sc">$</span>longitude)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>cc_2018 <span class="ot">&lt;-</span> <span class="fu">subset</span>(cc_2018, <span class="fu">complete.cases</span>(cc_2018[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">13</span>,<span class="dv">17</span>)]))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Starting with some data exploration, the <code>ggmap</code> package provides some nice options to plot data on maps. Here we plot the location of crime incidents in Chicago in January 2018, colored by <code>arrest</code>. First, we get the map using StadiaMaps API key. You can get your API key by signing up and generating the API key here: <a href="https://docs.stadiamaps.com/authentication/" class="uri">https://docs.stadiamaps.com/authentication/</a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>api_keys <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"~/repos/api-keys.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3 Columns: 2
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): key_id, key
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">register_stadiamaps</span>(api_keys <span class="sc">|&gt;</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">filter</span>(key_id <span class="sc">==</span> <span class="st">"stadiamaps_key"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">pull</span>(key) )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>bbox <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">left =</span> <span class="sc">-</span><span class="fl">87.95</span>, <span class="at">bottom =</span> <span class="fl">41.6</span>, <span class="at">right =</span> <span class="sc">-</span><span class="fl">87.5</span>, <span class="at">top =</span> <span class="fl">42.05</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>map <span class="ot">&lt;-</span> <span class="fu">get_stadiamap</span>(<span class="at">bbox =</span> bbox, <span class="at">zoom =</span> <span class="dv">12</span>, <span class="at">maptype =</span> <span class="st">"stamen_terrain"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ © Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap contributors.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ 48 tiles needed, this may take a while (try a smaller zoom?)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map) <span class="sc">+</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a> <span class="fu">geom_point</span>(<span class="at">data =</span> cc_2018, <span class="fu">aes</span>(<span class="at">x =</span> longitude, <span class="at">y =</span> latitude, <span class="at">color =</span> arrest), <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can also focus on specific types of crimes. For this, we can first filter crimes using <code>primary_type</code> and then plot the results based on location, faceted by type.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>cc_bn <span class="ot">&lt;-</span> cc_2018 <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(primary_type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"BURGLARY"</span>, <span class="st">"NARCOTICS"</span>))</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map) <span class="sc">+</span> </span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a> <span class="fu">geom_point</span>(<span class="at">data =</span> cc_bn, <span class="fu">aes</span>(<span class="at">x =</span> longitude, <span class="at">y =</span> latitude, <span class="at">color =</span> primary_type), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(<span class="at">cols =</span> <span class="fu">vars</span>(primary_type))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="clustering" class="level2">
+<h2 class="anchored" data-anchor-id="clustering">Clustering</h2>
+<p>In the previous graph, narcotics-related crimes seem to cluster at certain locations. We can use Clustering to structure our data and find groups of crime incidents that occurred at similar locations. First, we create a subset of the crimes of interest.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>c_data <span class="ot">&lt;-</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  cc_2018 <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(primary_type <span class="sc">==</span> <span class="st">"NARCOTICS"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(longitude, latitude)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, we can run `kmeans()` to employ K-Means Clustering. Based on the previous plot we assume that a three cluster solution is adequate. Note that `nstart` can be used to try out several starting points for the clusters.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>km_1 <span class="ot">&lt;-</span> <span class="fu">kmeans</span>(c_data, <span class="dv">3</span>, <span class="at">nstart =</span> <span class="dv">20</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>km_1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>K-means clustering with 3 clusters of sizes 668, 344, 20
+
+Cluster means:
+  longitude latitude
+1 -87.72073 41.88301
+2 -87.62996 41.75996
+3 -87.89231 41.95607
+
+Clustering vector:
+   [1] 1 2 1 2 1 1 2 1 1 1 1 2 1 1 1 2 2 1 1 2 1 2 1 2 2 1 1 1 1 1 1 2 1 1 1 2 1
+  [38] 1 1 1 2 1 1 1 2 1 1 2 2 1 1 2 2 1 1 1 1 1 2 2 1 1 1 1 1 1 1 2 1 1 1 1 1 1
+  [75] 1 2 2 1 1 1 1 2 2 2 1 2 1 1 2 2 1 1 1 2 2 1 1 1 1 1 2 2 2 1 2 2 2 1 1 1 1
+ [112] 1 1 1 2 1 1 1 1 1 1 1 2 2 3 1 1 2 2 1 1 1 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 1
+ [149] 1 1 1 1 2 1 1 3 1 2 1 1 1 1 2 1 2 1 1 2 1 2 2 1 2 2 1 1 1 1 2 1 2 1 2 1 1
+ [186] 1 1 2 1 2 1 1 2 1 2 1 1 1 1 1 2 1 1 2 2 1 2 1 2 1 1 1 2 1 1 1 1 2 2 2 2 1
+ [223] 1 2 2 2 2 1 1 1 1 1 2 2 1 2 1 1 1 2 2 1 2 1 1 1 2 2 2 2 1 1 2 2 2 2 2 1 1
+ [260] 1 2 1 1 2 2 1 2 1 2 2 1 2 1 1 2 1 1 1 1 2 2 2 1 1 2 1 1 1 1 2 1 2 2 1 1 1
+ [297] 1 1 2 1 1 1 1 1 1 1 2 2 1 1 2 1 1 1 1 1 1 1 1 1 1 2 1 2 1 1 2 1 1 1 1 1 1
+ [334] 1 1 1 1 2 1 1 2 1 1 1 2 1 2 1 1 1 1 1 1 1 1 1 1 1 2 1 1 1 1 2 2 1 1 2 1 1
+ [371] 1 1 1 2 1 1 1 1 1 2 1 2 2 1 1 1 2 2 2 2 1 1 1 2 1 1 1 1 2 1 2 1 2 1 1 1 2
+ [408] 1 1 2 1 1 2 1 2 1 2 2 1 1 1 1 1 1 1 1 1 1 2 1 1 1 1 2 1 1 1 1 1 1 1 1 1 2
+ [445] 2 2 1 2 1 1 1 1 2 1 1 1 1 2 1 2 1 1 2 1 2 1 1 1 1 1 1 1 2 1 2 1 2 1 1 2 1
+ [482] 1 1 1 1 2 2 1 2 1 2 1 1 1 1 1 1 1 2 1 1 1 1 2 1 2 2 2 1 1 1 1 1 2 1 1 1 1
+ [519] 1 1 2 2 2 1 2 1 2 2 2 2 1 2 2 2 1 1 1 1 1 1 1 1 1 2 2 1 1 1 1 1 1 1 1 1 1
+ [556] 1 1 1 1 2 1 1 1 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 1 1 1 1 2 1 2 1 2 1 1
+ [593] 1 2 2 2 1 1 2 1 1 1 1 1 2 1 1 2 1 1 1 1 2 1 2 1 1 2 2 1 1 1 2 2 1 1 2 1 1
+ [630] 2 1 1 2 1 1 1 1 2 1 2 2 2 1 2 2 1 2 1 2 2 1 2 2 1 1 1 1 1 1 1 2 2 2 2 2 2
+ [667] 1 1 1 2 2 1 1 1 1 1 1 1 2 2 1 1 2 2 2 2 2 1 1 1 1 2 2 2 2 1 1 1 2 1 2 1 1
+ [704] 2 1 1 1 1 2 1 1 1 2 1 1 1 1 2 1 2 1 1 1 1 1 1 1 1 1 1 1 1 2 1 2 1 1 2 1 1
+ [741] 1 1 1 2 1 1 2 1 1 1 1 2 1 2 1 1 1 2 1 1 1 1 1 1 1 1 1 1 2 2 1 2 1 2 1 1 1
+ [778] 2 1 1 1 1 2 1 2 1 1 1 1 2 1 2 1 1 1 1 1 1 2 2 1 1 2 2 1 1 2 1 1 1 1 1 1 1
+ [815] 1 2 1 1 1 1 1 2 1 2 1 2 1 1 2 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 1 1 2 1
+ [852] 1 1 1 2 1 1 1 2 1 1 1 2 2 1 2 2 1 1 1 1 2 2 2 2 2 1 1 2 1 1 1 2 3 1 1 1 1
+ [889] 3 1 1 3 1 3 3 3 3 1 1 1 2 3 2 2 2 1 3 2 1 2 2 1 2 2 1 1 1 2 1 2 2 1 1 1 1
+ [926] 1 1 1 1 2 1 2 2 2 1 2 2 1 2 2 1 1 2 2 2 2 1 2 2 2 2 1 1 2 1 1 3 3 3 3 3 1
+ [963] 1 2 1 1 2 1 1 2 2 2 1 1 2 1 1 1 1 1 3 1 2 1 3 1 2 2 2 2 2 2 1 1 1 2 2 2 1
+[1000] 1 2 2 1 2 2 2 2 2 2 1 1 2 3 3 1 1 1 2 1 1 2 1 2 2 2 1 1 2 1 2 1 1
+
+Within cluster sum of squares by cluster:
+[1] 1.11163488 1.07678250 0.02838866
+ (between_SS / total_SS =  74.2 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"      </code></pre>
+</div>
+</div>
+<p>Given the K-Means three cluster solution, we can again plot our crime incidents, now colored by cluster membership.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">data =</span> c_data, <span class="fu">aes</span>(<span class="at">x =</span> longitude, <span class="at">y =</span> latitude, <span class="at">color =</span> <span class="fu">as.factor</span>(km_1<span class="sc">$</span>cluster)), <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>However, grouping crime locations into three clusters might not be the optimal solution. We can utilize <code>fviz_nbclust</code> to compute the within cluster sums of squares over a range of cluster solutions and to visualize the result.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_nbclust</span>(c_data, <span class="co">#data set we want to use</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>             kmeans, <span class="co">#cluster method</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">method =</span> <span class="st">"wss"</span>, <span class="co">#method used for estimating the optimal number of clusters</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">k.max =</span> <span class="dv">25</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Based on the “elbow” criterion, we may want to choose k = 6 as the optimal number of clusters in this case. Therefore, we run <code>kmeans()</code> again and also plot the new cluster solution to inspect the new result.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>km_2 <span class="ot">&lt;-</span> <span class="fu">kmeans</span>(c_data, <span class="dv">15</span>, <span class="at">nstart =</span> <span class="dv">20</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">data =</span> c_data, <span class="fu">aes</span>(<span class="at">x =</span> longitude, <span class="at">y =</span> latitude, <span class="at">color =</span> <span class="fu">as.factor</span>(km_2<span class="sc">$</span>cluster)), <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Lets add another variable to find clusters that build on more information. We might be interested which crime incidents are related with respect to location and the time of the day they occur. First, we create a new subset of the Chicago crime data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>hclust_data <span class="ot">&lt;-</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  cc_2018 <span class="sc">%&gt;%</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(arrest <span class="sc">==</span> <span class="st">"TRUE"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hour =</span> <span class="fu">hour</span>(date)) <span class="sc">%&gt;%</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(longitude, latitude, hour) <span class="sc">%&gt;%</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_all</span>(scale)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This time we use hierarchical clustering to find clusters. This clustering approach needs a distance matrix as input, which can be computed with <code>dist()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>hclust_d <span class="ot">&lt;-</span> <span class="fu">dist</span>(hclust_data)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as.matrix</span>(hclust_d)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           1         2         3         4        5         6         7
+1  0.0000000 1.6561763 1.4399248 1.8798367 3.149190 1.8059853 2.1787893
+2  1.6561763 0.0000000 0.4164713 1.2375075 1.817699 0.4791613 0.9268017
+3  1.4399248 0.4164713 0.0000000 1.5448119 1.776009 0.8706926 1.3324225
+4  1.8798367 1.2375075 1.5448119 0.0000000 2.952494 0.8144496 0.6858272
+5  3.1491901 1.8176989 1.7760087 2.9524943 0.000000 2.1544580 2.3978214
+6  1.8059853 0.4791613 0.8706926 0.8144496 2.154458 0.0000000 0.4668366
+7  2.1787893 0.9268017 1.3324225 0.6858272 2.397821 0.4668366 0.0000000
+8  1.7827537 0.6931271 0.4501904 1.8918262 1.392810 1.1607453 1.5835488
+9  2.2678815 1.1013357 1.4990352 0.6085604 2.558090 0.6408061 0.2342447
+10 0.7791444 1.2508715 0.8935984 1.9884676 2.431620 1.5872741 2.0405380
+           8         9        10
+1  1.7827537 2.2678815 0.7791444
+2  0.6931271 1.1013357 1.2508715
+3  0.4501904 1.4990352 0.8935984
+4  1.8918262 0.6085604 1.9884676
+5  1.3928095 2.5580901 2.4316197
+6  1.1607453 0.6408061 1.5872741
+7  1.5835488 0.2342447 2.0405380
+8  0.0000000 1.7427001 1.1209067
+9  1.7427001 0.0000000 2.1762762
+10 1.1209067 2.1762762 0.0000000</code></pre>
+</div>
+</div>
+<p>Hierarchical clustering is implemented in <code>hclust()</code>. To demonstrate that Clustering is very sensitive to the parameters being used, we create three cluster objects based on three types of linkage methods.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>hc_complete <span class="ot">&lt;-</span> <span class="fu">hclust</span>(hclust_d, <span class="at">method =</span> <span class="st">"complete"</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>hc_average <span class="ot">&lt;-</span> <span class="fu">hclust</span>(hclust_d, <span class="at">method =</span> <span class="st">"average"</span>)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>hc_ward <span class="ot">&lt;-</span> <span class="fu">hclust</span>(hclust_d, <span class="at">method =</span> <span class="st">"ward.D2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The dendograms of the cluster results show how observations are merged to create clusters. On this basis, we can pick the number of clusters we want to extract by stopping the fusion process at a certain point. <code>rect.hclust()</code> can be used to highlight a specific cluster solution.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hc_complete, <span class="at">main =</span> <span class="st">"Complete Linkage"</span>, <span class="at">xlab =</span> <span class="st">""</span>, <span class="at">sub =</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hc_average, <span class="at">main =</span> <span class="st">"Average Linkage"</span>, <span class="at">xlab =</span> <span class="st">""</span>, <span class="at">sub =</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-16-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(hc_ward, <span class="at">main =</span> <span class="st">"Ward"</span>, <span class="at">xlab =</span> <span class="st">""</span>, <span class="at">sub =</span> <span class="st">""</span>)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rect.hclust</span>(hc_ward, </span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">k =</span> <span class="dv">6</span>, </span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">border =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-16-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We want to create six clusters based on the <code>hc_ward</code> object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cutree</span>(hc_ward, <span class="dv">6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   [1] 1 1 1 2 1 2 2 1 2 1 1 1 2 2 1 2 2 2 1 2 1 1 1 2 1 1 1 2 3 2 1 2 2 2 1 4 2
+  [38] 4 4 3 2 1 1 5 4 2 3 1 3 1 3 1 3 3 2 1 4 3 4 5 3 4 3 4 5 4 3 4 4 4 3 6 4 4
+  [75] 4 4 5 4 4 5 5 4 6 6 6 6 6 6 5 3 4 4 4 6 4 6 6 4 6 5 5 4 4 6 4 3 6 5 5 4 6
+ [112] 5 4 4 5 6 4 3 2 6 6 6 1 5 5 4 1 3 2 2 2 3 2 3 4 5 3 4 4 5 4 5 4 3 3 4 4 4
+ [149] 5 3 3 4 4 3 5 4 3 3 3 5 5 3 4 4 3 4 4 4 4 4 4 4 5 5 6 6 5 5 6 6 6 6 5 4 3
+ [186] 4 4 4 4 6 6 5 5 6 6 4 6 5 6 5 6 4 4 5 6 5 6 4 4 4 4 4 3 3 6 5 6 4 4 4 6 4
+ [223] 6 4 5 4 6 4 6 4 6 5 6 4 4 4 5 4 2 2 1 1 5 5 4 3 3 3 4 4 5 4 4 3 3 4 4 3 5
+ [260] 4 4 3 3 4 4 4 3 5 4 3 4 4 4 3 5 3 4 4 4 4 4 4 4 4 6 4 4 6 4 4 5 4 4 5 6 6
+ [297] 1 4 5 4 6 5 4 4 4 4 4 6 6 4 4 4 6 4 4 4 6 6 6 4 6 4 4 6 6 4 6 6 4 4 5 4 6
+ [334] 4 3 5 5 6 3 6 1 1 2 2 2 2 2 2 3 2 3 5 4 4 4 3 3 4 4 3 3 4 4 1 3 3 4 3 3 3
+ [371] 4 3 5 4 5 3 3 3 3 4 4 4 4 4 4 4 4 4 4 3 6 4 5 3 4 4 3 4 6 3 4 6 4 4 5 5 6
+ [408] 4 6 6 4 4 5 5 4 5 4 4 4 4 4 4 5 4 4 6 4 6 4 6 6 5 4 4 6 6 6 6 6 5 1 6 3 2
+ [445] 2 1 2 2 2 1 1 2 1 4 2 3 5 3 3 4 5 4 4 4 4 3 3 3 3 4 5 5 4 4 3 3 5 4 3 4 4
+ [482] 3 4 4 3 6 4 4 3 6 4 4 3 5 5 3 6 4 5 4 4 5 3 4 6 4 6 4 4 4 3 6 5 5 6 6 4 4
+ [519] 4 4 6 4 6 5 5 4 4 5 4 6 5 4 4 4 4 4 5 6 4 6 4 5 6 5 4 6 5 6 1 2 1 1 1 1 3
+ [556] 1 2 1 2 1 2 1 3 4 4 3 3 4 4 3 1 3 3 3 3 4 4 1 3 3 4 3 5 5 4 4 4 3 4 4 4 3
+ [593] 3 5 5 4 5 3 3 4 4 4 3 4 4 5 4 4 4 4 6 6 6 4 5 6 5 5 4 6 6 6 6 6 6 4 4 4 5
+ [630] 6 4 5 4 4 6 4 6 6 5 4 6 6 6 4 4 4 4 4 1 6 5 6 1 5 5 5 6 4 1 1 1 1 1 1 1 4
+ [667] 2 1 1 4 5 4 3 1 5 3 3 4 3 4 3 3 3 3 4 5 3 3 4 3 4 3 4 4 5 4 4 3 4 4 5 4 3
+ [704] 4 4 4 4 4 4 4 4 5 4 4 5 4 5 6 6 4 4 6 4 1 5 5 6 4 5 6 4 6 6 6 6 6 5 6 4 6
+ [741] 6 4 6 4 5 6 5 6 4 6 5 5 1 2 2 2 1 1 2 1 1 4 4 5 3 4 3 3 4 1 3 3 3 5 3 3 4
+ [778] 3 3 3 4 3 5 4 3 4 4 3 5 3 3 4 3 4 3 3 4 3 5 3 3 3 5 4 5 3 3 5 4 4 3 4 4 3
+ [815] 4 3 5 4 4 3 4 6 4 3 4 4 6 4 5 4 4 4 4 5 4 4 6 4 4 4 5 4 6 6 5 4 4 4 5 6 4
+ [852] 4 3 5 6 4 4 6 4 4 5 1 4 4 4 6 4 5 5 4 6 4 6 4 4 5 4 6 6 6 6 6 5 5 4 4 6 6
+ [889] 1 5 4 3 2 1 1 1 1 1 2 2 1 1 4 4 1 3 4 3 3 1 4 5 3 4 4 4 4 3 3 3 4 3 4 3 4
+ [926] 4 2 5 4 3 4 4 4 4 3 3 3 3 4 5 5 3 3 3 4 3 4 5 6 3 4 4 4 4 5 4 6 4 5 5 6 3
+ [963] 4 5 4 4 5 6 4 4 6 6 6 6 4 4 5 5 4 5 4 3 6 4 4 6 5 6 6 6 5 6 4 5 4 5 4 5 6
+[1000] 4 4 4 4 4 4 6 6 6 6 4 4 5 4 4 4 4 4 6 4 4 4 4 6 6 6 5 5 4 5 6 5 5 5 3 5 4
+[1037] 2 3 6 6 2 1 2 1 2 1 1 1 1 2 1 4 1 3 1 4 5 5 4 1 4 4 4 3 4 5 3 4 4 4 2 5 4
+[1074] 4 3 3 4 4 3 4 3 5 5 3 3 4 5 4 5 5 4 3 4 4 5 4 3 4 4 4 4 5 4 3 5 4 4 4 5 4
+[1111] 3 6 4 6 4 6 6 5 6 6 3 4 5 4 6 4 4 5 4 6 4 6 3 6 4 4 4 4 6 6 6 6 5 4 4 3 5
+[1148] 3 4 4 5 4 3 4 4 4 4 6 6 6 6 6 4 6 5 6 6 6 6 5 5 6 4 4 6 6 5 4 6 4 5 4 3 4
+[1185] 4 4 6 4 4 3 3 1 4 1 1 1 2 2 2 1 1 2 1 4 5 2 4 5 5 3 3 3 5 4 3 5 3 5 4 3 4
+[1222] 5 3 4 3 4 3 3 4 5 5 3 4 4 5 3 5 3 3 4 3 4 5 3 6 5 5 4 4 3 4 5 4 3 5 6 4 4
+[1259] 5 3 5 3 4 3 5 4 4 5 5 4 4 5 5 4 6 6 4 4 6 4 5 6 4 6 6 6 4 4 5 6 4 6 6 6 4
+[1296] 4 6 5 4 4 4 6 4 5 6 5 1 5 4 5 4 6 5 5 4 4 6 5 4 6 4 6 5 4 4 3 1 1 1 2 1 1
+[1333] 2 2 3 3 5 2 4 4 3 3 3 3 3 5 4 3 5 4 4 4 4 3 3 3 4 3 2 5 5 5 4 3 3 4 3 3 3
+[1370] 3 4 3 4 5 4 3 4 5 4 3 4 5 6 3 5 5 4 4 6 5 4 4 5 6 5 6 6 5 6 4 6 4 4 4 6 3
+[1407] 4 6 6 6 6 6 4 6 4 4 6 6 6 6 4 4 4 6 3 6 4 5 5 5 6 5 4 4 4 4 4 6 4 4 4 6 5
+[1444] 4 5 5 4 4 4 3 5 5 1 1 1 1 1 1 1 3 3 3 1 3 4 5 4 4 5 5 3 4 3 4 4 5 5 3 4 4
+[1481] 4 4 4 4 5 4 5 3 3 4 4 4 4 4 3 5 3 4 4 4 3 4 5 3 4 4 5 5 4 4 5 5 6 3 5 4 4
+[1518] 5 4 6 6 6 4 6 4 6 5 6 5 4 6 6 6 6 4 4 4 6 6 4 4 6 4 6 4 4 4 6 4 4 4 6 5 6
+[1555] 6 5 4 6 6 4 6 4 4 4 4 6 5 6 5 4 5 5 1 2 1 2 1 1 2 1 1 1 2 1 1 2 1 1 2 2 5
+[1592] 1 2 4 2 1 4 5 3 1 3 1 4 4 4 5 3 4 3 3 4 3 3 5 3 3 3 5 3 4 3 4 4 4 5 4 4 3
+[1629] 4 2 4 4 3 4 4 4 6 4 3 3 4 4 5 3 5 4 4 4 5 4 4 4 4 4 4 4 4 6 5 6 6 4 4 6 4
+[1666] 6 6 6 4 6 4 4 4 4 4 6 6 4 5 4 4 4 6 6 6 4 3 4 4 3 5 1 3 1 1 1 2 2 1 1 2 5
+[1703] 3 4 3 3 4 4 3 4 3 3 4 4 5 3 3 4 5 3 4 4 4 3 4 4 4 4 4 4 3 5 5 5 4 5 3 4 4
+[1740] 5 5 4 4 3 4 5 4 5 4 5 5 6 6 6 4 6 3 4 6 5 4 6 4 3 6 4 6 4 4 6 4 4 5 5 4 6
+[1777] 6 6 6 6 6 5 4 6 6 6 6 6 6 5 4 1 5 3 4 1 5 6 2 1 1 2 2 2 2 2 1 1 5 1 4 5 4
+[1814] 4 4 3 3 4 3 4 5 4 3 4 3 4 5 4 5 4 4 5 4 4 4 3 4 3 4 4 4 5 3 4 4 3 4 4 3 6
+[1851] 5 3 5 6 5 6 4 6 5 4 6 6 6 6 4 5 4 6 6 4 4 5 4 5 4 6 4 5 4 4 4 5 6 4 6 4 6
+[1888] 4 6 4 6 5 6 4 4 5 6 4 4 4 4 5 4 5 4 6 3 4 4 6 5 2 6 1 1 1 1 1 2 1 1 2 2 1
+[1925] 4 5 1 5 5 3 3 4 3 4 4 3 3 3 3 4 4 4 3 3 3 5 5 5 4 4 3 5 4 5 4 5 3 4 4 4 4
+[1962] 4 3 3 4 3 4 5 5 3 4 4 5 6 6 1 4 5 3 4 4 6 6 4 4 4 5 5 6 4 6 5 4 3 5 4 6 6
+[1999] 4 5 5 4 6 4 6 4 4 5 5 6 4 6 5 4 4 6 4 5 4 6 5 4 6 4 5 6 6 6 4 6 6 6 6 6 5
+[2036] 4 4 4 5 5 2 1 2 1 2 3 1 4 4 3 4 3 3 4 3 3 4 4 4 3 4 4 5 4 3 3 4 4 3 3 3 3
+[2073] 4 3 3 5 3 3 5 5 3 4 5 3 5 4 5 4 3 5 4 4 3 3 4 5 5 5 2 5 4 4 6 4 4 5 3 3 4
+[2110] 4 4 4 4 4 6 5 5 4 6 4 6 5 5 5 5 4 4 4 5 6 4 6 4 6 6 4 4 4 5 4 6 4 4 6 6 5
+[2147] 6 6 4 4 5 4 5 4 4 5 4 5 4 3 3 4 2 2 1 2 2 1 1 4 4 3 1 4 5 3 3 3 3 3 4 3 4
+[2184] 3 4 3 3 3 3 3 4 5 3 4 3 2 3 4 4 4 3 4 3 3 4 4 4 3 4 4 4 4 3 4 5 5 5 4 4 5
+[2221] 3 4 4 3 5 3 5 5 5 3 5 5 5 4 3 6 4 5 5 5 4 3 4 3 5 3 4 5 5 5 5 6 5 4 6 4 4
+[2258] 6 5 6 6 4 6 6 4 6 4 4 5 4 4 4 6 4 4 6 4 4 4 4 5 4 4 4 4 5 6 6 5 6 4 4 4 6
+[2295] 4 5 6 6 4 6 5 4 4 4 4 4 4 4 4 6 4 4 4 6 5 4 4 6 4 5 4 5 4 5 3 2 1 2 1 1 1
+[2332] 1 1 1 2 1 1 2 1 1 1 2 4 5 3 3 4 3 4 2 1 3 5 3 4 3 4 3 4 2 3 3 3 4 4 5 4 5
+[2369] 3 4 3 4 3 4 4 3 3 3 4 5 4 5 5 3 4 4 4 3 3 5 4 4 5 3 4 6 4 4 4 5 4 4 4 5 6
+[2406] 5 6 5 4 4 4 6 6 5 4 6 4 4 4 4 6 4 4 4 6 6 6 4 5 6 6 6 4 6 6 4 5 4 4 4 4 5
+[2443] 6 6 6 4 6 4 6 6 6 6 5 5 4 4 5 5 4 4 4 6 4 5 4 4 4 4 4 1 4 4 4 3 4 4 4 5 1
+[2480] 1 4 1 1 1 1 2 2 1 2 1 2 1 1 3 2 2 1 1 1 1 4 1 4 5 4 4 1 3 3 5 3 4 4 3 3 4
+[2517] 4 4 4 4 3 3 3 4 3 4 4 3 5 3 3 4 4 5 4 3 4 1 4 5 4 5 3 4 3 4 3 3 4 4 4 4 4
+[2554] 4 6 4 3 4 5 4 4 5 5 6 4 6 5 4 4 6 4 5 4 6 4 5 6 4 6 4 4 6 6 6 6 5 6 4 4 5
+[2591] 6 6 4 4 4 4 4 4 4 6 4 5 4 5 3 5 5 6 4 4 6 6 6 5 6 4 5 4 3 6 3 1 1 2 1 3 1
+[2628] 2 1 1 2 2 3 2 3 4 3 2 4 4 3 3 3 1 3 3 1 5 4 3 4 5 4 3 4 4 3 5 3 4 4 4 4 4
+[2665] 3 3 3 3 3 4 5 4 3 4 6 3 4 4 5 3 5 4 5 4 4 4 5 6 5 5 3 4 3 4 5 3 3 5 4 6 4
+[2702] 5 4 6 5 4 5 6 4 4 4 4 4 6 5 6 4 5 5 6 6 6 4 4 6 6 4 6 6 4 6 4 4 4 5 4 4 4
+[2739] 6 5 6 6 6 6 5 5 6 4 4 5 5 4 5 6 4 4 6 6 4 4 6 3 4 1 2 2 1 1 1 2 1 1 2 2 1
+[2776] 1 1 3 1 4 3 4 5 3 3 4 4 4 4 4 4 3 3 4 4 4 4 3 3 3 4 3 4 4 3 5 4 4 3 5 5 5
+[2813] 5 4 4 5 4 5 4 3 4 4 3 3 5 4 4 4 5 4 4 4 6 4 4 4 6 5 5 4 5 4 3 5 5 4 6 4 4
+[2850] 5 5 6 5 4 4 4 4 4 6 4 6 6 4 6 6 6 5 4 6 6 6 4 6 6 4 5 4 4 4 4 4 4 5 4 5 5
+[2887] 4 4 5 5 6 6 4 4 4 4 5 4 5 1 6 3 1 2 1 2 4 3 3 3 4 3 4 3 4 4 5 3 4 4 5 5 3
+[2924] 5 5 3 5 5 4 3 3 3 3 3 3 4 4 3 4 3 3 3 4 4 4 4 4 3 3 4 3 3 4 4 4 4 4 4 4 3
+[2961] 3 4 5 3 3 5 4 6 3 3 3 4 5 4 6 4 3 3 5 6 5 5 4 4 4 4 6 4 4 4 4 6 6 6 6 3 4
+[2998] 4 5 5 6 4 6 6 4 6 4 5 4 4 4 5 5 4 6 4 4 3 5 3 4 4 4 5 3 3 1 4 4 5 5 3 1 1
+[3035] 1 2 1 1 2 2 1 3 5 4 2 4 3 1 3 3 3 4 3 4 3 3 4 4 3 5 4 4 4 4 4 5 5 3 4 3 4
+[3072] 4 5 3 4 3 5 3 4 3 4 4 6 4 3 5 4 5 4 4 5 4 4 5 4 6 6 3 6 4 6 3 4 5 4 5 4 6
+[3109] 6 6 6 4 6 5 4 4 4 6 4 6 4 4 6 6 6 6 4 6 4 4 4 4 6 4 5 4 4 2 2 2 1 2 2 2 1
+[3146] 4 5 5 4 4 3 4 3 5 4 4 4 3 3 4 5 4 3 4 4 4 3 3 4 3 4 3 3 3 4 4 3 5 5 5 4 5
+[3183] 3 3 5 5 4 4 3 4 4 5 4 4 4 5 4 3 3 4 5 6 4 4 5 4 3 5 3 4 4 4 3 4 4 3 4 3 4
+[3220] 4 4 5 3 6 6 4 4 4 4 6 4 4 5 6 5 4 6 5 6 4 4 4 6 6 6 6 6 5 6 6 4 5 6 5 6 6
+[3257] 3 4 4 6 4 4 5 4 4 6 5 4 4 5 6 4 6 5 5 4 4 4 4 4 6 5 5 4 4 4 4 4 2 5 3 3 4
+[3294] 2 2 2 1 2 2 1 1 1 1 2 1 1 2 1 1 2 1 1 2 2 1 2 1 1 1 1 4 1 3 4 3 4 5 4 3 3
+[3331] 3 3 4 3 4 3 4 4 4 3 3 4 4 4 4 3 4 3 3 4 4 3 5 5 3 3 4 4 4 4 3 3 4 5 3 4 4
+[3368] 6 3 4 4 4 4 4 4 6 6 3 5 5 5 4 4 4 4 5 5 3 3 4 4 5 6 6 5 4 6 6 6 6 6 4 4 5
+[3405] 4 6 5 5 6 6 4 6 4 6 6 6 6 6 4 4 6 6 6 6 4 4 5 6 4 6 6 4 5 6 5 6 5 6 5 4 6
+[3442] 6 4 5 6 6 5 4 4 4 4 6 4 4 5 5 5 3 4 4 3 4 5 4 1 4 2 1 2 1 1 2 3 1 2 2 1 2
+[3479] 1 1 1 1 2 1 2 1 3 2 1 1 4 1 2 2 1 5 1 3 5 3 5 5 3 4 3 4 4 3 3 3 3 3 4 3 4
+[3516] 4 3 3 4 3 5 5 4 3 3 3 3 4 5 3 3 4 4 6 5 5 4 6 6 6 6 5 4 3 5 4 4 4 4 4 5 4
+[3553] 6 6 6 4 4 6 5 4 6 4 4 4 5 6 6 5 6 4 5 4 4 6 5 6 4 4 4 4 5 6 6 6 4 6 4 5 4
+[3590] 6 6 6 6 4 6 4 5 6 4 2 6 6 6 4 6 6 3 4 5 4 6 4 2 2 2 2 1 2 1 2 1 1 4 5 1 5
+[3627] 5 3 5 4 3 3 3 5 4 4 5 3 5 5 4 3 3 5 5 4 5 5 3 4 4 4 4 3 5 3 5 5 4 5 4 4 3
+[3664] 4 4 3 5 6 3 4 4 5 5 5 3 4 6 4 5 5 5 4 3 6 5 6 5 6 5 4 4 4 5 4 6 4 4 4 6 5
+[3701] 5 6 4 5 4 4 6 6 6 4 4 4 6 5 6 6 6 4 6 5 5 5 4 4 5 5 6 5 4 5 4 5 4 5 3 2 2
+[3738] 2 1 1 2 2 1 4 1 4 4 3 5 4 4 4 4 4 5 3 3 3 3 3 5 4 4 3 3 4 3 4 4 5 4 4 5 5
+[3775] 5 3 5 4 4 4 3 4 3 5 3 4 4 5 5 5 5 5 3 5 3 4 4 3 4 3 4 5 5 6 6 4 5 6 5 4 4
+[3812] 6 4 6 4 6 5 4 6 4 5 4 4 4 5 4 4 4 4 4 6 3 4 5 6 5 4 4 6 4 6 4 6 4 4 4 4 4
+[3849] 6 4 6 6 4 4 5 3 1 5 5 4 3 4 5 1 3 3 4 1 5 2 4 1 4 5 2 4 5 4 1 4 5 4 5 6 1
+[3886] 5 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 5 6 6 2 6 4 3 4 4 4 6 3 4 3 4 4 3 4 4 3
+[3923] 3 3 1 4 3 4 4 3 5 3 3 3 3 3 5 3 4 3 4 4 4 3 4 4 3 4 4 3 5 4 4 4 4 3 4 4 4
+[3960] 4 4 5 4 5 3 2 2 1 3 3 3 3 3 3 6 4 5 3 4 4 3 4 4 4 5 3 4 5 5 1 1 6 3 3 3 2
+[3997] 6 4 1 2 4 3 3 3 4 4 4 4 4 4 3 3 3 4 4 4 3 3 4 4 3 4 4 4 4 4 4 6 3 4 3 3 3
+[4034] 4 2 6 4 3 5 4 1 3 4 1 6 4 4 4 3 5 3 2 2 4 4 4 1 1 1 6 3 3 1 4 5 1 1</code></pre>
+</div>
+</div>
+<p>One way to make sense of a cluster solution is to simply compute the mean of the variables we used to generate the clusters for each cluster.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>cc_2018 <span class="sc">%&gt;%</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(arrest <span class="sc">==</span> <span class="st">"TRUE"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hour =</span> <span class="fu">hour</span>(date)) <span class="sc">%&gt;%</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cluster =</span> <span class="fu">cutree</span>(hc_ward, <span class="dv">6</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(cluster) <span class="sc">%&gt;%</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">mean</span>(longitude), <span class="fu">mean</span>(latitude), <span class="fu">mean</span>(hour), <span class="at">district =</span>  <span class="fu">names</span>(<span class="fu">table</span>(district))[<span class="fu">which.max</span>(<span class="fu">table</span>(district))])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  cluster `mean(longitude)` `mean(latitude)` `mean(hour)` district
+    &lt;int&gt;             &lt;dbl&gt;            &lt;dbl&gt;        &lt;dbl&gt; &lt;chr&gt;   
+1       1             -87.7             41.9         1.79 011     
+2       2             -87.6             41.8         1.32 006     
+3       3             -87.7             41.9        11.4  011     
+4       4             -87.6             41.8        15.2  006     
+5       5             -87.6             41.9        15.5  001     
+6       6             -87.7             41.9        19.6  011     </code></pre>
+</div>
+</div>
+<p>For our data, plotting the crime incidents on a map, colored by cluster membership, is again very helpful to interpret the clustering results.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>cc_arrest <span class="ot">&lt;-</span> cc_2018  <span class="sc">%&gt;%</span> <span class="fu">filter</span>(arrest <span class="sc">==</span> <span class="st">"TRUE"</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggmap</span>(map) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">data =</span> cc_arrest, <span class="fu">aes</span>(<span class="at">x =</span> longitude, <span class="at">y =</span> latitude, <span class="at">color =</span> <span class="fu">as.factor</span>(<span class="fu">cutree</span>(hc_ward, <span class="dv">6</span>))), <span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="data-ii" class="level2">
+<h2 class="anchored" data-anchor-id="data-ii">Data II</h2>
+<p>In this section, we use the Census API to gather data from the American Community Survey (ACS). The <code>censusapi</code> package provides a nice R interface for communicating with this API. This requires an access key, which can be obtained here:</p>
+<p><a href="https://api.census.gov/data/key_signup.html" class="uri">https://api.census.gov/data/key_signup.html</a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>cs_key <span class="ot">&lt;-</span> api_keys <span class="sc">|&gt;</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(key_id <span class="sc">==</span> <span class="st">"Census_key"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>There are many Census API endpoints, which can be listed using <code>listCensusApis()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>apis <span class="ot">&lt;-</span> <span class="fu">listCensusApis</span>()</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(apis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>From here on, we will focus on <code>acs/acs5</code> (ACS 5-Year data). Another useful helper function is <code>listCensusMetadata()</code>, which can be used to gather some information about the regional level on which data might be available.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>acs_geo <span class="ot">&lt;-</span> <span class="fu">listCensusMetadata</span>(<span class="at">name =</span> <span class="st">"acs/acs5"</span>,</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">vintage =</span> <span class="dv">2016</span>,</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">type =</span> <span class="st">"geography"</span>)</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(acs_geo)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                name geoLevelDisplay referenceDate      requires wildcard
+1                 us             010    2016-01-01          NULL     NULL
+2             region             020    2016-01-01          NULL     NULL
+3           division             030    2016-01-01          NULL     NULL
+4              state             040    2016-01-01          NULL     NULL
+5             county             050    2016-01-01         state    state
+6 county subdivision             060    2016-01-01 state, county   county
+  optionalWithWCFor
+1              &lt;NA&gt;
+2              &lt;NA&gt;
+3              &lt;NA&gt;
+4              &lt;NA&gt;
+5             state
+6            county</code></pre>
+</div>
+</div>
+<p>To narrow down queries based on location, the following websites list the regional codes that are used by the Census Bureau.</p>
+<p><a href="https://www.census.gov/geo/reference/ansi_statetables.html" class="uri">https://www.census.gov/geo/reference/ansi_statetables.html</a></p>
+<p><a href="https://www.census.gov/geo/reference/codes/cou.html" class="uri">https://www.census.gov/geo/reference/codes/cou.html</a></p>
+<p>We can also use <code>listCensusMetadata()</code> to get information about the available variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>acs_vars <span class="ot">&lt;-</span> <span class="fu">listCensusMetadata</span>(<span class="at">name =</span> <span class="st">"acs/acs5"</span>, </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>                               <span class="at">vintage =</span> <span class="dv">2016</span>,</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">type =</span> <span class="st">"variables"</span>)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(acs_vars)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         name
+1         for
+2          in
+3       ucgid
+4 B99104_007E
+5 B24022_060E
+6 B11011_007E
+                                                                                           label
+1                                                                   Census API FIPS 'for' clause
+2                                                                    Census API FIPS 'in' clause
+3                                                     Uniform Census Geography Identifier clause
+4                              Estimate!!Total!!Not living with own grandchildren under 18 years
+5 Estimate!!Total!!Female!!Service occupations!!Food preparation and serving related occupations
+6                                               Estimate!!Total!!Family households!!Other family
+                                                                                                                                                                        concept
+1                                                                                                                                            Census API Geography Specification
+2                                                                                                                                            Census API Geography Specification
+3                                                                                                                                            Census API Geography Specification
+4                                                ALLOCATION OF LENGTH OF TIME GRANDPARENT RESPONSIBLE FOR OWN GRANDCHILDREN UNDER 18 YEARS FOR THE POPULATION 30 YEARS AND OVER
+5 SEX BY OCCUPATION AND MEDIAN EARNINGS IN THE PAST 12 MONTHS (IN 2016 INFLATION-ADJUSTED DOLLARS) FOR THE FULL-TIME, YEAR-ROUND CIVILIAN EMPLOYED POPULATION 16 YEARS AND OVER
+6                                                                                                                                          HOUSEHOLD TYPE BY UNITS IN STRUCTURE
+  predicateType  group limit predicateOnly hasGeoCollectionSupport
+1      fips-for    N/A     0          TRUE                    &lt;NA&gt;
+2       fips-in    N/A     0          TRUE                    &lt;NA&gt;
+3         ucgid    N/A     0          TRUE                    TRUE
+4           int B99104     0          &lt;NA&gt;                    &lt;NA&gt;
+5           int B24022     0          &lt;NA&gt;                    &lt;NA&gt;
+6           int B11011     0          &lt;NA&gt;                    &lt;NA&gt;
+                             attributes required
+1                                  &lt;NA&gt;     &lt;NA&gt;
+2                                  &lt;NA&gt;     &lt;NA&gt;
+3                                  &lt;NA&gt;     &lt;NA&gt;
+4                          B99104_007EA     &lt;NA&gt;
+5 B24022_060EA,B24022_060M,B24022_060MA     &lt;NA&gt;
+6 B11011_007EA,B11011_007M,B11011_007MA     &lt;NA&gt;</code></pre>
+</div>
+</div>
+<p>The following website also contains information on which variables are available for the ACS 5-Year data.</p>
+<p><a href="https://www.census.gov/data/developers/data-sets/acs-5year.html" class="uri">https://www.census.gov/data/developers/data-sets/acs-5year.html</a></p>
+<p>In the following, we request some socio-demographic information on a census tract level for the state of Illinois from the ACS 5-Year data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>acs_il <span class="ot">&lt;-</span> <span class="fu">getCensus</span>(<span class="at">name =</span> <span class="st">"acs/acs5"</span>,</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">vintage =</span> <span class="dv">2016</span>, </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">vars =</span> <span class="fu">c</span>(<span class="st">"NAME"</span>, <span class="st">"B01001_001E"</span>, <span class="st">"B06002_001E"</span>, <span class="st">"B15003_002E"</span>, </span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"B15003_022E"</span>, <span class="st">"B15003_023E"</span>, <span class="st">"B15003_025E"</span>, <span class="st">"B17001_002E"</span>, </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"B19013_001E"</span>, <span class="st">"B19025_001E"</span>, <span class="st">"B19301_001E"</span>, <span class="st">"B19051_001E"</span>),</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">region =</span> <span class="st">"tract:*"</span>, </span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">regionin =</span> <span class="st">"state:17"</span>,</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">key =</span> cs_key)</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(acs_il)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  state county  tract                                        NAME B01001_001E
+1    17    031 806002 Census Tract 8060.02, Cook County, Illinois        7304
+2    17    031 806003 Census Tract 8060.03, Cook County, Illinois        7577
+3    17    031 806400    Census Tract 8064, Cook County, Illinois        2684
+4    17    031 806501 Census Tract 8065.01, Cook County, Illinois        2590
+5    17    031 750600    Census Tract 7506, Cook County, Illinois        3594
+6    17    031 310200    Census Tract 3102, Cook County, Illinois        1521
+  B06002_001E B15003_002E B15003_022E B15003_023E B15003_025E B17001_002E
+1        40.6         101        1129         431          50        1568
+2        41.7         138        1616         452          39         527
+3        37.7          11         271         150          20         628
+4        36.0          49         359          39          16         372
+5        43.2          48         249         174           0        1357
+6        34.1          19         376         142          22         254
+  B19013_001E B19025_001E B19301_001E B19051_001E
+1       56975   163606500       23750        2651
+2       53769   181672500       25016        2817
+3       62750    78107500       30154         849
+4       53583    50243000       20282         716
+5       40125    61084000       18347        1182
+6       63250    45007700       31403         649</code></pre>
+</div>
+</div>
+<p>First thing to do is to convert values that represent missings to NAs and rename variables.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>acs_il[acs_il <span class="sc">==</span> <span class="sc">-</span><span class="dv">666666666</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>acs_il <span class="sc">%&lt;&gt;%</span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">pop =</span> B01001_001E, </span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">age =</span> B06002_001E, </span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">no_school =</span> B15003_002E,</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">bachelor_degree =</span> B15003_022E,</span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">master_degree =</span> B15003_023E,</span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">doc_degree =</span> B15003_025E,</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">low_income =</span> B17001_002E,</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">hh_income =</span> B19013_001E, </span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">agg_hh_income =</span> B19025_001E,</span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">income =</span> B19301_001E,</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">hh_earnings =</span> B19051_001E)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we prepare the data for PCA. We want to extract principle components in order to condense the set of demographic features that we have in our data set. In this context, it’s also useful to display a scatterplot matrix before running PCA.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>acs_sub <span class="ot">&lt;-</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  acs_il <span class="sc">%&gt;%</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(state, county, tract, NAME)) <span class="sc">%T&gt;%</span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pairs</span>(.)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="pca" class="level2">
+<h2 class="anchored" data-anchor-id="pca">PCA</h2>
+<p>Principle Component Analysis is implemented in <code>prcomp()</code>. It is advisable to run PCA on variables that are on the same scale, i.e.&nbsp;we want to use <code>scale.</code> to scale our features prior to the analysis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(<span class="at">x =</span> acs_sub, </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>How many components are needed? We can assess the importance of each component by investigating the amount of variance explained.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                          PC1    PC2     PC3     PC4     PC5     PC6     PC7
+Standard deviation     2.3343 1.5527 0.96217 0.88354 0.76782 0.58528 0.44961
+Proportion of Variance 0.4954 0.2192 0.08416 0.07097 0.05359 0.03114 0.01838
+Cumulative Proportion  0.4954 0.7146 0.79871 0.86968 0.92327 0.95441 0.97279
+                           PC8     PC9    PC10    PC11
+Standard deviation     0.37845 0.27707 0.22103 0.17455
+Proportion of Variance 0.01302 0.00698 0.00444 0.00277
+Cumulative Proportion  0.98581 0.99279 0.99723 1.00000</code></pre>
+</div>
+</div>
+<p>This information can also be plotted with a screeplot.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_screeplot</span>(pca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looks like extracting two Principle Components is a reasonable solution. We can print the loadings of these components for further interpretation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>rotation[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                        PC1         PC2
+pop             -0.28109260 -0.40878914
+age             -0.11362527  0.31891128
+no_school        0.03963711 -0.39125538
+bachelor_degree -0.40255939 -0.07895066
+master_degree   -0.40057115 -0.02994626
+doc_degree      -0.29385746 -0.02872461
+low_income       0.11555065 -0.52491407
+hh_income       -0.31811720  0.28278976
+agg_hh_income   -0.41562933 -0.05991293
+income          -0.32699423  0.30568405
+hh_earnings     -0.32158694 -0.34294904</code></pre>
+</div>
+</div>
+<p>Another way of inspecting the PCA result is looking at the squared coordinates ((loadings * the component standard deviations)^2), which indicate how good a variable is represented by a given component.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>var <span class="ot">&lt;-</span> <span class="fu">get_pca_var</span>(pca)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(var<span class="sc">$</span>cos2, <span class="at">is.corr =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Finally, a biplot can be used to display both the scores and the loadings of a PCA result. However, its readability depends on the number of observations and features that were used in the analysis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">biplot</span>(pca,</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">scale =</span> <span class="dv">0</span>, </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex =</span> .<span class="dv">7</span>,</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">15</span>, <span class="dv">5</span>),</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">las =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ClusteringAndPCA_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
