@@ -1,0 +1,155 @@
+---
+title: "Homework 7"
+author: "Jamila Sani and Kevin Linares"
+date: "`r Sys.Date()`"
+output: pdf_document
+number_sections: yes
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo=TRUE,cache=TRUE, 
+                      autodep=TRUE, cache.comments=FALSE,
+                      message=FALSE, warning=FALSE,
+                      fig.width=5, fig.height=4, fig.align = 'center')
+```
+
+
+```{r}
+library(faraway)
+library(dplyr)
+library(knitr)
+library(tidyverse)
+library(knitr)
+data(teengamb)
+summary(teengamb) |> kable()
+head(teengamb)
+```
+
+
+```{r}
+modg <- lm(gamble ~ sex + status + income + verbal, teengamb)
+summary (modg)
+```
+
+<br>
+<br>
+
+## 1.A. Check the zero mean error assumption using residual plots. What do you conclude about whether the assumption is met?
+-   The zero mean error assumption is not violated as the points seem to be evenly distributed on either sides of the purple        line.Also, the mean of the residuals is approximately zero (-1.6e-16), suggesting that the zero mean assumption is not      violated.
+
+
+```{r,fig.width=4, fig.height=3}
+plot(fitted(modg),resid(modg), pch=20, col="limegreen")+ 
+abline(h=0,col="purple")
+mean(resid(modg))
+```
+
+<br>
+<br>
+
+
+## 1.B. Check the constant error variance assumption using both residual plots and a formal statistical test. What do you conclude?
+-   The density plot shows evidence of heteroscadasticity. The resid vs. fitted plot from 1A above indicates the same as the        points are more dense on the left side of the plot.
+-   Residuals seem to be related to fitted value from the low pvalues associated with the Beta1 (0.03) coefficient. We reject       the null that true ratio of variances = 1 in favor of the alternative hypothesis => unequal variances, according to our F-test.
+
+```{r,fig.width=4, fig.height=4}
+hist(resid(modg))  
+plot(density(resid(modg)),
+     main="Density Plot")
+
+plot(fitted(modg),resid(modg), pch=20, col="limegreen")+ 
+abline(h=0,col="purple")
+```
+
+```{r}
+summary(lm((residuals(modg)) ~ fitted(modg)))
+
+var.test(resid(modg)[fitted(modg)<=30], 
+         resid(modg)[fitted(modg)>30])
+```
+
+<br>
+<br>
+
+# 1.C. Check the error normality assumption both graphically and statistically. What do you conclude? Which method do you think is preferable?
+-   Graphically: The data are not normally distributed. There are a few outliers on both ends of the qq plot. 
+-   Statistically: The low pvalue means that we reject the null hypothesis that the residuals are normal. 
+-   Both methods have their strengths; however, graphical method is preferable as they are more interpretable and easier to         reveal structures that may not have been suspected; while statistical inferences could be harder to interpret and sometimes     more sensitive e.g. Shapiro-Wilk normality test.
+
+```{r,fig.width=4, fig.height=4}
+qqnorm(resid(modg))
+qqline(residuals(modg))
+shapiro.test(resid(modg))
+```
+
+<br>
+<br>
+
+# 1.D. Check for observations with large leverage. Which observations have large leverage?
+-   Using the half-normal plots, observations 42 and 35 seem to have large leverages.
+
+```{r}
+hatv <- hatvalues(modg)
+head(hatv)
+sum(hatv) # sum of hat values should equal the number of parameters in model
+
+highlev <- row.names (teengamb)
+halfnorm (hatv, labs=highlev, ylab="Leverages") 
+```
+
+```{r,fig.width=4, fig.height=4}
+halfnorm(hatvalues(modg)) # half normal plot
+```
+
+<br>
+<br>
+
+# 1.E. Check for outliers. List any potential outliers.
+-   Observation 24 is a potential outlier. It is the largest of the studentized residuals (6.02). 
+    Also, it is greater than the Bonferroni critical value of -3.5 computed.
+    
+```{r}
+stud <- rstudent(modg)
+stud[which.max(abs(stud))]
+abs(sort(stud)[1:47]) 
+abs(sort(stud)[1:47])>abs(qt(0.05/(47),47-5)) 
+abs(stud)[24] 
+```
+
+### Note. We can use the car package to detect outliers, influenctial observations, and leverage points to confirm our results below. 
+```{r}
+car::influencePlot(modg) #checks for influential points, outliers, and leverage.
+```
+<br>
+<br>
+
+# 1.F. Check for influential points. List any potential influential points.
+-   From the Cook's statistics, the three largest  values identified as influential points are observations 24, 39, and 5.
+    Observation 24 (corresponds to the potential outlier in 1E).
+    
+```{r}
+cookd<-cooks.distance(modg)
+summary(cookd) 
+sort(cookd,dec=T)[1:10]
+halfnorm (cookd, 2, ylab="Cook's distances")
+```
+
+<br>
+<br>
+
+# 1.G. Check the structure of relationship between the predictors and the response.What do you observe?
+-   From the partial residual plots, all seem to be linear and there are no issues observed in the structure of the relationship     between the predictors and the response. There is strong positive relationship between income and gambling; a negative          linear relationship is observed in the plots for verbal and sex; while status shows 
+
+```{r} 
+termplot(modg, partial.resid = TRUE, terms=1)
+termplot(modg, partial.resid = TRUE, terms=2)
+termplot(modg, partial.resid = TRUE, terms=3)
+termplot(modg, partial.resid = TRUE, terms=4)
+```
+
+
+
+
+
+
