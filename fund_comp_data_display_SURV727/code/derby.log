@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Thu Nov 21 11:10:08 EST 2024:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0193-4f7c-f28b-0000243538e0 
+on database directory memory:/home/kevin/repos/UMD_classes_code/fund_comp_data_display_SURV727/code/databaseName=metastore_db with class loader org.apache.spark.sql.hive.client.IsolatedClientLoader$$anon$1@49d5b9f1 
+Loaded from file:/home/kevin/spark/spark-2.4.3-bin-hadoop2.7/jars/derby-10.12.1.1.jar
+java.vendor=JetBrains s.r.o
+java.runtime.version=1.8.0_152-release-1056-b12
+user.dir=/home/kevin/repos/UMD_classes_code/fund_comp_data_display_SURV727/code
+os.name=Linux
+os.arch=amd64
+os.version=5.15.167.4-microsoft-standard-WSL2
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
