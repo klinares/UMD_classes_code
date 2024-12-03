@@ -21,6 +21,7 @@ library(car)
 library(gratia)
 library(dplyr)
 library(faraway)
+library(huxtable)
 library(MASS)
 library(mgcv)
 library(tidyverse)
@@ -30,7 +31,6 @@ options(scipen=999)
 ```
 
 ## 1. Faraway Chapter 9. Exercise 7. Use the cheddar data for this question.
-
 
 ```{r}
 data("cheddar") 
@@ -50,7 +50,6 @@ gratia::draw(mod_taste_gam)
 
 ```
 
-
 ## 1.B. Use the Box-Cox method to determine an optimal transformation of the response. Would it be reasonable to leave the response as is (i.e., no transformation)?
 
 -   The Lambda value is between .50 and 1. We can either leave the outcome variable un-transformed or try a squared root transformation.
@@ -60,7 +59,6 @@ mod_taste_lm <- lm(taste ~., data = cheddar)
 boxcox(mod_taste_lm)
 
 ```
-
 
 -   If we do decide to squared root transform the outcome response, our residual plot appears to show more evidence on non-constant variance than the residual plot before the transformation.
 
@@ -77,10 +75,7 @@ residualPlot(mod_taste_lm_t, pch=20, col= "dodgerblue",
 
 ```
 
-
-## 2. Faraway Chapter 10. Exercise 2. Using the teengamb dataset with gamble as the response and the other variables. Implement the following variable selection methods to determine the “best” model.
-
-
+## 2. Faraway Chapter 10. Exercise 2. Using the teengamb dataset with gamble as the response and the other variables. Implement the following variable selection methods to determine the "best" model.
 
 ```{r}
 data("teengamb")
@@ -91,7 +86,7 @@ glimpse(teengamb)
 
 ## 2.A. Backward elimination (based on the significance of predictors)
 
--   The full model contains gamble as a function of sex, income, status, and verbal. Given our significance level, we remove status, and finally status and verbal together to refit the models. 
+-   The full model contains gamble as a function of sex, income, status, and verbal. Given our significance level, we remove status, and finally status and verbal together to refit the models.
 
 ```{r}
 summ(mod_back <- lm(gamble ~., teengamb))
@@ -106,32 +101,32 @@ summ(mod_back_status_verbal <- update(mod_back,.~. -status-verbal))
 
 {{< pagebreak >}}
 
-## 2.B. Now use AIC. Which is the “best” model?
+## 2.B. Now use AIC. Which is the "best" model?
 
--   The model with sex + income + verbal has the lower AIC, and we determine it is the "best" model for these data based on this criterion. 
+-   The model with sex + income + verbal has the lower AIC, and we determine it is the "best" model for these data based on this criterion.
 
 ```{r}
 back.mod <- stepAIC(mod_back, direction = "backward")
 back.mod$anova
 ```
 
-
 {{< pagebreak >}}
 
-## 2.C. Now use adjusted R2. Which is the “best” model?
+## 2.C. Now use adjusted R2. Which is the "best" model?
 
--   “Best” model is gamble ~ sex + income + verbal, the adjusted r-squared is close to the full model while dropping status or one less parameter to estimate. 
+-   "Best" model is gamble \~ sex + income + verbal, the adjusted r-squared is close to the full model while dropping status or one less parameter to estimate.
 
 ```{r}
-jtools::export_summs(
-  mod_back, mod_back_status, mod_back_status_verbal, model.info=FALSE)
+huxtable::huxreg(
+  mod_back, mod_back_status, mod_back_status_verbal, 
+  statistics=c( "adj.r.squared"))
 ```
 
 \
 
-## 2.D. Now use Mallows Cp. Which is the “best” model?
+## 2.D. Now use Mallows Cp. Which is the "best" model?
 
--   “Best” model is gamble ~ sex + income + verbal based on having the lowest Mllow $c_p$ value.
+-   "Best" model is gamble \~ sex + income + verbal based on having the lowest Mllow $c_p$ value.
 
 ```{r}
 sub1<-regsubsets(gamble ~.,teengamb)
@@ -139,4 +134,3 @@ rsub1<-summary(sub1)
 plot(I(1:4), rsub1$cp, ylab="Mallow's Cp", xlab="# Predictors")
 rsub1$which
 ```
-

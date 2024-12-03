@@ -153,6 +153,9 @@ ggplot(cc_sub, aes(x = assault, y = theft)) +
 Some space to play with `stat_functions`, `geoms`, aesthetics and faceting.
 
 ```{r}
+cs_key <- read_csv("~/repos/api-keys.csv") |> 
+  filter(key_id == "stadiamaps_key") |> 
+  pull(key)
 
 
 ```
@@ -165,7 +168,7 @@ https://boundingbox.klokantech.com/
 
 ```{r}
 bbox <- c(left = -87.896805, bottom = 41.677015, right = -87.409286, top = 42.082936)
-ggmap::register_stadiamaps("9aabe3c5-1d2a-41af-8c00-392f5e735d12") # pass API key
+ggmap::register_stadiamaps(cs_key) # pass API key
 map <- get_stadiamap(bbox = bbox, zoom = 10, maptype = "stamen_terrain")
 ggmap(map)
 ```
