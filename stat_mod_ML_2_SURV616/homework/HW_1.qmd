@@ -1,0 +1,87 @@
+---
+title: Homework 1
+author: Kevin Linares
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+embed-resources: true
+editor: visual
+execute:
+  warning: false
+  error: false
+  tidy: true
+format: pdf
+theme: lux
+---
+
+## 
+
+The following data are from Google Trends show the number of times that the term "film noir" was searched using Google.
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo=TRUE,cache=TRUE, 
+                      autodep=TRUE, cache.comments=FALSE,
+                      message=FALSE, warning=FALSE,
+                      fig.width=4.5, fig.height=3)
+library(knitr)
+library(ggthemes)
+library(tidyverse)
+
+```
+
+```{r, echo=FALSE}
+gtrends <- read_csv(
+  "~/repos/UMD_classes_code/stat_mod_ML_2_SURV616/homework/hw1_google_trends.csv") |> 
+  mutate(week = mdy(week))
+
+kable(gtrends)
+
+```
+
+1.  a\) \[5 points\] Calculate maximum likelihood estimate of p (i.e. the proportion of all 781 searches that occurred in each week). Graph these 12 proportions.
+
+    1.  The maximum likelihood estimation of a proportion p is given as, which is the success over trials:
+
+$$
+\theta = g(p), \text{ is } \hat\theta = g(\hat{p})
+$$
+
+```{r}
+gtrends <- gtrends |> 
+  mutate(p_hat = film_noir / sum(film_noir))
+
+kable(gtrends)
+```
+
+```         
+2.    We visualize the proportions by week date.
+```
+
+```{r}
+gtrends |> 
+  ggplot(aes(x=week, y=p_hat)) +
+  geom_line(color="dodgerblue", alpha=.7) +
+  ylim(0, .15) +
+  theme_hc()
+```
+
+1.  b\) \[5 points\] Write the null hypothesis that the proportion of searches for "film noir" is the same each week. Also, write the alternative hypothesis (i.e., that there has been a change in the proportion of searches each week).
+
+    1.  The null hypothesis, $H_0:p_1=p_2=p_3... = p_{12}$, is that the weekly proportion of web searches for "film_noir" is the same across weeks. The alternative hypothesis, $H_a:p_1 \ne p_2 \ne p_3... \ne p_{12}$, is that there is at least one proportion not equal to the other weekly proportions of web searches, in other words, there has been a change in the proportion of searches each week.
+
+2.  
+
+    c)  \[15 points\] Compute the X2 and G2 statistics. What do these tell us?
+
+    -   The Pearson Chi-square test
+
+$$
+\chi^2 = \sum_{i=1}^k \frac{(O_i - E_i)^2}{E_i}
+$$
+
+```         
+  -   where $O_i = n_i$ is the observed count in the $i^{th}$ category, and $E_i = np_{0i}$ is the expected count in the $i^{th}$ category (from $H_0$).
+-   The likelihood ratio statistic $G^2$ is a statistical method used to compare the goodness-of-fit of two competing statistical models. It approximates the $\chi$
+```
+
+$$
+G^2 = 2\sum_{i=1}^k O_i ln(\frac{O_i}{E_i})
+$$
