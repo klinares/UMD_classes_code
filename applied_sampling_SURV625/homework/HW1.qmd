@@ -1,0 +1,121 @@
+---
+title: Homework 1
+author: Kevin Linares
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+embed-resources: true
+editor: visual
+execute:
+  warning: false
+  error: false
+  tidy: true
+format: pdf
+theme: lux
+---
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo=TRUE,cache=TRUE, 
+                      autodep=TRUE, cache.comments=FALSE,
+                      message=FALSE, warning=FALSE,
+                      fig.width=4.5, fig.height=3)
+
+library(readxl)
+library(tidyverse)
+```
+
+## Download the Excel file “fem1524_admin.xlsx” from the homework folder on the course Canvas site. This file is a population list of N = 2,920 young women between the ages of 15 and 24, which will be considered as a sampling frame for this first homework assignment.
+
+1.  Select a simple random sample (SRS) of size n = 20 from this frame. Each student will select a different simple random sample, using the R code set.seed(the last four digits of your UM/UMD student ID). Note that we are simulating the notion of hypothetical repeated random sampling using the same SRS design! The class has 30 enrolled students and would generate 30 samples.
+
+```{r}
+fem_dat <- read_xlsx("~/repos/UMD_classes_code/applied_sampling_SURV625/homework/fem1524_admin.xlsx")
+
+glimpse(fem_dat)
+
+# random sample of size N.
+set.seed(4291)
+fem_dat_sample <- fem_dat |> sample_n(size=20)
+
+
+```
+
+2.  Give, in selection order, the list of the 20 four-digit selection number (IDs) and the values of AGE for the women in your sample.
+
+```{r}
+# confirm that the same 20 IDs were selected due to seed
+fem_dat_sample |> 
+  mutate(selection = row_number()) |> 
+  select(selection, ID, AGER) |> 
+  print(n=20)
+```
+
+3.  Compute the sample estimate of the mean age. What else would we need to compute (be specific) to make inference about the mean age of the population?
+    -   The sample mean is given as:
+
+$$
+\bar{y} = \frac{1}{N}\sum_{i \epsilon s}y_i
+$$
+
+```{r}
+ave_age <- fem_dat_sample |> 
+  summarize(ave_age = 
+              # divide sum of each age value by sample size
+              sum(AGER)/n() 
+            )
+
+print(ave_age)
+```
+
+-   On it's own the sample mean of 20.62 is not useful for making an inference about the population mean, yet without knowing some information about the spread of values in the sample. We can compute the element variance estimate $s^2$ and than we can square it to compute the standard deviation $s = \sqrt{s^2}$ as:
+
+$$
+s^2 = \frac{1}{n-1}\sum_{i=1}^N (y_i - \bar{y})^2
+$$
+
+```{r}
+var_est <- fem_dat_sample |> 
+  summarize(
+    var_est = 
+      (1 / (n()-1)) * sum( (AGER - mean(AGER))^2) 
+  )
+
+stand_dev <- sqrt(var_est)
+
+print(var_est)
+print(stand_dev)
+```
+
+-   We can now use our $s^2 =2.66$ estimate (with $s=1.63$) to compute the sampling variance estimate $var(\bar{y})$, which we use a sample to estimate the variances in the population. However, we need to compute the finite population $f = n/N$ which if we assume the overall sample is the population our estimate is $f = 20/2920$, and express the sampling variance estimate as:
+
+$$
+var(\bar{y}) = (1 - f)\frac{s^2}{n}
+$$
+
+```{r}
+f <- 20/2920
+sample_var = (1 - f) * (var_est / nrow(fem_dat_sample))
+
+print(sample_var)
+```
+
+-   We can now use the $var(\bar{y}) = .13$ estimate to compute a standard error $se(\bar{y}) = \sqrt{var(\bar{y})}$ that we will be able to use to compute 95% confidence intervals, which indicate the accuracy of an estimate. If we were to take samples from the same population and construct a confidence interval , we would expect 95% of the resulting intervals to include the true value of the population parameter. We express confidence intervals as:
+
+$$
+\bar{y}  \pm t_{1-\alpha/2,n-1}\times se(\bar{y})
+$$
+
+```{r}
+se <- sqrt(sample_var) # standard error
+n <- nrow(fem_dat_sample) # sample size
+qt_value <- .975 # quantile function to use
+
+# compute CI
+Mean_CI <- c(ave_age - qt(qt_value, n-1)*se, ave_age + qt(qt_value, n-1)*se)
+
+# label CI
+names(Mean_CI) <- c("lower", "upper")
+
+# add average age & print
+append(ave_age, Mean_CI) |> unlist() |> round(3)
+```
+
+-   In a simple random sample of 20 females we infer on the average female age in the population We estimate the population average age to be 20.6 (95% CI \[19.9, 21.4\]).
