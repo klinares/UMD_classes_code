@@ -70,29 +70,13 @@ ave_age <- fem_dat_sample |>
 print(ave_age)
 ```
 
--   On it's own the sample mean of 20.62 is not useful for making an inference about the population mean, yet without knowing some information about the spread of values in the sample. We can compute the element variance estimate $s^2$ and than we can square it to compute the standard deviation $s = \sqrt{s^2}$ as:
-
-
-
+-   The sample mean was 20.6. However, to make an inference about the mean age of the population we would first need a list of the population to sample from and to know the population size *N.* Our sample mean is an approximation of the population mean;therefore, we must understand the variation of this sample from the population and first would need to calculate the element variance estimate $s^2$, which is the sampling variation from the sample mean, as:
 
 $$
 s^2 = \frac{1}{n-1}\sum_{i=1}^N (y_i - \bar{y})^2
 $$
 
-```{r}
-var_est <- fem_dat_sample |> 
-  summarize(
-    var_est = 
-      (1 / (n()-1)) * sum( (AGER - mean(AGER))^2) 
-  )
-
-stand_dev <- sqrt(var_est)
-
-print(var_est)
-print(stand_dev)
-```
-
--   We can now use our $s^2 =2.66$ estimate (with $s=1.63$) to compute the sampling variance estimate $var(\bar{y})$, which we use a sample to estimate the variances in the population. However, we need to compute the finite population $f = n/N$ which if we assume the overall sample is the population our estimate is $f = 20/2920$, and express the sampling variance estimate as:
+-   We can now use our $s^2$ estimate to compute the sampling variance estimate $var(\bar{y})$, which we use a sample to estimate the variances in the population. However, we need to compute the finite population $f = n/N$ which if we assume the overall sample is the population our estimate is $f = 20/2920$, and express the sampling variance estimate as:
 
 $$
 var(\bar{y}) = (1 - f)\frac{s^2}{n}
@@ -136,7 +120,6 @@ append(ave_age, Mean_CI) |> unlist() |> round(3)
 
 \newpage
 
-
 \
 
 5.  Based on the ID numbers of the SRS sample that you selected above, use the data file available for this homework “SM 625 HW 1.xlsx” and work on the following questions.
@@ -173,14 +156,11 @@ y_bar
 
 -   We compute the average sexual partners in the past year from our sample of 20 to be estimated at 1.15.
 
-
-b. Estimate the population element variance $s^2$
+b.  Estimate the population element variance $s^2$
 
 $$
 s^2 = \frac{\sum_{i=1}^{20}(y_i - \bar{y})^2}{n -1} = \frac{(\sum_{i=1}^{20}y_i^2 - \frac{y^2}{n}) }{n-1}
 $$
-
-
 
 ```{r}
 s_sqrd <- fem_dat_sample_combined |> 
@@ -193,13 +173,12 @@ s_sqrd
 
 -   The population element variance for sexual partners in the past year is 1.08.
 
-c. Estimate the sampling variance of the mean, $var(\bar{y})$, and the standard error $SE\bar{y}$ as:
+c.  Estimate the sampling variance of the mean, $var(\bar{y})$, and the standard error $SE\bar{y}$ as:
 
 $$
 var(\bar{y}) = (1 - f)\frac{s^2}{n} \\
 SE(\bar{y}) = \sqrt{var(\bar{y})}
 $$
-
 
 ```{r}
 # compute f wih sample size
@@ -218,8 +197,7 @@ se_bar_y |> rename(se_bar_y=1) # standard error
 
 -   The sampling variance of the mean is .05 with a standard error of .23.
 
-
-d. Compute a 95% confidence interval for the sample mean.
+d.  Compute a 95% confidence interval for the sample mean.
 
 $$
 \bar{y}  \pm t_{1-\alpha/2,n-1}\times se(\bar{y})
@@ -240,15 +218,13 @@ names(Mean_CI) <- c("lower", "upper")
 append(y_bar, Mean_CI) |> unlist() |> round(3)
 ```
 
--   The average number of sexual partners in the past year is 1.15 (95% CI [.67, .64]).
+-   The average number of sexual partners in the past year is 1.15 (95% CI \[.67, .64\]).
 
+e.  Explain why the mean computed in a) will generally not be equal to the population mean.
 
-e. Explain why the mean computed in a) will generally not be equal to the population
-mean.
+-   When we draw a sample from the population, we are typically taking a subset of the population with some inherent randomness. Each sample are slightly different thus leading to variation in the estimate, and this is called sampling variation. Sampling error also contributes to this discrepancy, which is the difference between the sample mean and population mean, and it is unavoidable due to the random nature of sampling from a population. As the sample size increase, the distribution of the sample means approximates the population mean due to the central limit theorem, which states that more samples eventually converges to a normal distribution.
 
--   When we draw a sample from the population, we are typically taking a subset of the population with some inherent randomness. Each sample are slightly different thus leading to variation in the estimate, and this is called sampling variation. Sampling error also contributes to this discrepancy, which is the difference between the sample mean and population mean, and it is unavoidable due to the random nature of sampling from a population. As the sample size increase, the distribution of the sample means approximates the population mean due to the central limit theorem, which states that more samples eventually converges to a normal distribution. 
-
-f. Estimate the coefficient of variation of the mean, $CV(\bar{y})=se(\bar{y})/\bar{y}$.
+f.  Estimate the coefficient of variation of the mean, $CV(\bar{y})=se(\bar{y})/\bar{y}$.
 
 ```{r}
 CV <- se_bar_y/y_bar 
@@ -258,20 +234,19 @@ CV |> rename(CV=1)
 
 -   The coefficient variation of the mean for this estimate is .20.
 
-g. What difference would it make for the sampling variance of the mean if the sample size were increased to n = 60?
+g.  What difference would it make for the sampling variance of the mean if the sample size were increased to n = 60?
 
--   By increasing the sample to an n of 60, the sampling variances will likely get smaller, hence the standard deviation naturally gets smaller as well. This is because larger samples begin to approximate the population's representation. Furthermore, with more observations the impact of outliers are minimized, leading to more stable and reliable sample means, hence lower variability. 
+-   By increasing the sample to an n of 60, the sampling variances will likely get smaller, hence the standard deviation naturally gets smaller as well. This is because larger samples begin to approximate the population's representation. Furthermore, with more observations the impact of outliers are minimized, leading to more stable and reliable sample means, hence lower variability.
 
-h. What sample size is needed to obtain $se(\bar{y})=0.05$? What about a $cv(\bar{y})=0.10$? What about a 95% confidence interval with width 0.40 (using 2 for the t-value)?
+h.  What sample size is needed to obtain $se(\bar{y})=0.05$? What about a $cv(\bar{y})=0.10$? What about a 95% confidence interval with width 0.40 (using 2 for the t-value)?
 
-- If the $se(\bar{y})=0.05$ than the desired sampling variance is $Var(\bar{y})= SE(\bar{y})=.05^2 = .0025$, so we would need a sample of 638 to go from a current SE of .23 to a desired SE of .05.
+-   If the $se(\bar{y})=0.05$ than the desired sampling variance is $Var(\bar{y})= SE(\bar{y})=.05^2 = .0025$, so we would need a sample of 638 to go from a current SE of .23 to a desired SE of .05.
 
 -   We need a sample size of 60 to achieve a CV from the current .20 to .10.
+
 -   We need a sample of 94 to go from a .97 95% CI width of .97, to a desired width of .40.
 
-
-i. Estimate the mean number of male sexual partners in the past year (and its standard error) for the subclass of teenagers (age 15-19) in the sample. Ignore the finite population correction in the calculation of the standard error. How does this standard error compare to the standard error for the full sample? Would you expect such a difference? If so, why?
-
+i.  Estimate the mean number of male sexual partners in the past year (and its standard error) for the subclass of teenagers (age 15-19) in the sample. Ignore the finite population correction in the calculation of the standard error. How does this standard error compare to the standard error for the full sample? Would you expect such a difference? If so, why?
 
 ```{r}
 dat_combined <- fem_dat |> 
@@ -310,16 +285,4 @@ dat |>
   
 ```
 
-
--   I would expect the standard error of the full sample to be smaller than the sub-sample due to more observations. However, the standard errors are not that different, meaning that the precision of these estimates for these two groups are almost comparable. The means are different and what I would expect since older women are probably only have one sexual partner if married.  
-
-
-
-
-
-
-
-
-
-
-
+-   I would expect the standard error of the full sample to be smaller than the sub-sample due to more observations. However, the standard errors are not that different, meaning that the precision of these estimates for these two groups are almost comparable. The means are different and what I would expect since older women are probably only have one sexual partner if married.
