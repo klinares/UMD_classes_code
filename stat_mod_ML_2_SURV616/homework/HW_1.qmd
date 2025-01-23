@@ -1,5 +1,5 @@
 ---
-title: Homework 1
+title: SURV616, Homework 1
 author: Kevin Linares
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 embed-resources: true
@@ -12,7 +12,7 @@ format: pdf
 theme: lux
 ---
 
-## 
+## ![](honor_hw1.png){width="182"}
 
 1.  The following data are from Google Trends show the number of times that the term "film noir" was searched using Google.
 
@@ -37,9 +37,11 @@ kable(gtrends)
 
 ```
 
-1.  There is a belief that the number of searches each week changed over that period of time
+-   There is a belief that the number of searches each week changed over that period of time
 
-a\) Calculate maximum likelihood estimate of **p** (i.e. the proportion of all 781 searches that occurred in each week). Graph these 12 proportions.
+\
+
+1.  a\) Calculate maximum likelihood estimate of **p** (i.e. the proportion of all 781 searches that occurred in each week). Graph these 12 proportions.
 
 -   The maximum likelihood estimation of a proportion p is given as, which is the success over trials:
 
@@ -49,7 +51,7 @@ $$
 
 ```{r}
 gtrends <- gtrends |> 
-  mutate(p_hat = film_noir / sum(film_noir))
+  mutate(p_hat = round(film_noir / sum(film_noir), 2))
 
 kable(gtrends)
 ```
@@ -64,13 +66,17 @@ gtrends |>
   theme_hc()
 ```
 
-b\) Write the null hypothesis that the proportion of searches for "film noir" is the same each week. Also, write the alternative hypothesis (i.e., that there has been a change in the proportion of searches each week).
+\
+
+1.  b\) Write the null hypothesis that the proportion of searches for "film noir" is the same each week. Also, write the alternative hypothesis (i.e., that there has been a change in the proportion of searches each week).
 
 -   The null hypothesis, $H_0: p_1=p_2=p_3... = p_{12}$, is that the weekly proportion of web searches for "film_noir" is the same across weeks. The alternative hypothesis, $H_a:p_1 \ne p_2 \ne p_3... \ne p_{12}$, is that there is at least one proportion not equal to the other weekly proportions of web searches, in other words, there has been a change in the proportion of searches each week.
 
-c\) Compute the $\chi^2$ and $G^2$ statistics. What do these tell us?
+\
 
--   The Pearson Chi-square test
+1.  c\) Compute the $\chi^2$ and $G^2$ statistics. What do these tell us?
+
+-   The Pearson Chi-square test;
 
 $$
 \chi^2 = \sum_{i=1}^k \frac{(O_i - E_i)^2}{E_i}
@@ -78,12 +84,12 @@ $$
 
 -   where $O_i = n_i$ is the observed count in the $i^{th}$ category, and $E_i = np_{0i}$ is the expected count in the $i^{th}$ category (from $H_0$).
 
--   We can compute the expected frequencies by dividing the cells over the sum of observed values
+-   We can compute the expected frequencies by dividing the cells over the sum of observed values.
 
 ```{r}
 gtrends <- gtrends |> 
   # add new column with expected frequencies
-  mutate(expected = sum(film_noir)/n()) 
+  mutate(expected = round(sum(film_noir)/n(), 0)) 
 
 # print data table
 gtrends
@@ -113,7 +119,9 @@ print(LRT)
 
 ```
 
--   We see that our $G^2=12.58$ approximates our $\chi^2=12.52$ closely. Overall our observations in each category does not fit our heuristic or theoretical expectations.
+-   We see that our $G^2=12.58$ approximates our $\chi^2=12.53$ closely. Overall our observations in each category does not fit our heuristic or theoretical expectations.
+
+\newpage
 
 2.  A graduate student decided to track the number of steps they took each day for a week. The student took a walk every afternoon. The student also walked to class and other places. The student wanted to know if they were walking about the same number of steps each day. Here are the data on steps tracked:
 
@@ -140,7 +148,7 @@ steps |> tally(step_counts)
 
 ```
 
-a\) Graph the proportions of all steps taken on each day of the week.
+2.  a\) Graph the proportions of all steps taken on each day of the week.
 
 ```{r}
 steps |> 
@@ -149,25 +157,29 @@ steps |>
   theme_hc()
 ```
 
+\
 
-b\)   Calculate the maximum likelihood estimate of **p**, as well as the maximum likelihood estimate of
-$\hat{V}(\hat(p))$. Note that the latter $\hat{V}(\hat(p))$ is a matrix of variances and covariances.
+2.  b\) Calculate the maximum likelihood estimate of **p**, as well as the maximum likelihood estimate of $\hat{V}(\hat{p})$. Note that the latter $\hat{V}(\hat{p})$ is a matrix of variances and covariances.
 
 ```{r}
 # MLE proportion
 steps <-  steps |> 
   mutate(p_hat = step_counts/sum(step_counts))
 
+# print columns of interest
 steps |> 
   select(days, p_hat)
 ```
 
+\
+
 -   The MLE variance estimate for a Binomial Distribution is given by:
 
 $$
-V(\hat{p}) =\frac{p_i(1-p_i)}{n}
+V(\hat{p}) =\frac{\hat{p_i}(1-\hat{p_i})}{n}
 $$
 
+\
 
 ```{r}
 
@@ -177,25 +189,22 @@ total_steps <- steps |> tally(step_counts)
 
 # calculate matrix of variances on the diagonal, and covariances
 var_p <- (diag(p_hat) - p_hat %*% t(p_hat))/sum(total_steps)
-
 print(var_p)
 
-# add variances to tibble
+# add variances to datatable as a new column "var_p"
 steps <- steps  |> 
   add_column(
-  var_p = diag(var_p)
+  var_p = round(diag(var_p), 6)
 )
 
 steps
 ```
 
+-   We calculate MLE variances $\hat{V}(\hat{p})$ for each $\hat{p}$ and include it to our data table.
 
--   We calculate MLE variances for each $\hat{p}$ and include it to our data table. 
+\
 
-
-
-c\)   Calculate the maximum likelihood estimate of the proportion of steps taken on the weekend
-(Sunday and Saturday, p1+p7) and the maximum likelihood estimate of the variance of the proportion of steps taken on the weekend.
+2.  c\) Calculate the maximum likelihood estimate of the proportion of steps taken on the weekend (Sunday and Saturday, p1+p7) and the maximum likelihood estimate of the variance of the proportion of steps taken on the weekend.
 
 ```{r}
  steps |> 
@@ -205,35 +214,34 @@ c\)   Calculate the maximum likelihood estimate of the proportion of steps taken
     # take sum of p_hats
     p_hat = sum(p_hat),
     # compute variance for p_hats
-            var_p = (1-p_hat) * p_hat / sum(total_steps)) 
+            var_p = (1-p_hat) * p_hat / sum(total_steps)
+    ) 
 ```
 
 -   The MLE proportion of steps was .35 with an estimated MLE variance of .000001.
 
+\
 
-
-d\) Test the hypothesis that, by computing both the $\chi^2$ and $G^2$ statistics. What do you conclude?
+2.  d\) Test the $H$ that, by computing both the $\chi^2$ and $G^2$ statistics. What do you conclude?
 
 $$
-H_0: (p_1=p_2=p_3=p_4=p_5=p_6=p_7) \text{ versus } 
+H_0: (p_1=p_2=p_3=p_4=p_5=p_6=p_7) \text{ vs } 
 H_A:(p_1 \ne p_2 \ne p_3 \ne p_4 \ne p_5 \ne p_6 \ne p_7)
 $$
 
-
-
 ```{r}
-# add expectations to the dataframe
+# add expected frequencies to the dataframe
 steps <- steps |> 
   mutate(expected = sum(step_counts) / n())
 
-# calculate chi-square using formula above
+# calculate chi-square using the same forumla as before
 chi_square <- sum(((steps$step_counts - steps$expected)^2) / steps$expected)
 print(chi_square)
 
 # check calculation that was done by hand
 chisq.test(steps$step_counts)
 
-# calculate LRT 
+# calculate LRT with formula introduced earlier
 LRT <- sum((2*steps$step_counts)*log(steps$step_counts/ (steps$expected)))
 print(LRT)
 
@@ -241,17 +249,12 @@ print(LRT)
 
 -   We calculate $\chi^2$ and $G^2$ goodness of fit statistics and we reject the Null hypothesis and state is no statistical difference between the observed distribution of steps versus the theoretical distribution we would expect.
 
+\newpage
 
-3. The following table is based on a study of aspirin use and myocardial infarction. The data are similar to actual data.
-
-
-a\) About 1.27% (n11+n21)/(n11+n21+n12+22) had myocardial infarction. Since this was a designed
-experiment, 50% were assigned to take a placebo. If the use of aspirin or placebo was independent of risk of myocardial infarction (i.e. if the risk of myocardial infarction was no different whether you took placebo or aspirin), what would the expected counts be in each cell (n11, n12, n21, and n22)?
-
-
--   It appears that theoverall probability of having a Myocardial Infarction is .0127 and the total sample is $N=20,105$ which the design experiment split the random sample evenly between the two conditions. We can assume that the risk of Myocardial infarction is the same regardless of condition.
+3.  The following table is based on a study of aspirin use and myocardial infarction. The data are similar to actual data.
 
 ```{r}
+
 # construct 2x2 table
 myo_table <- matrix(c(173, 83, 9879, 9970), nrow= 2, ncol = 2, byrow = FALSE)
 rownames(myo_table) <- c("Placebo", "Aspirin") 
@@ -266,8 +269,15 @@ disease_prop <- myo_table[[3, 1]] / myo_table[[3, 3]]
 myo_table
 ```
 
+\
 
--   We calculate the expected frequencies for the expected frequencies for having disease by both conditions, and not having the disease by both conditions. The expected frequencies for having the disease regardless of condition is 128, and not having the disease in the placebo group the expected frequency is 9,924, and the expected frequency for not having the disease in the aspirin group is 9,925. 
+3.  a\) About 1.27% (n11+n21)/(n11+n21+n12+22) had myocardial infarction. Since this was a designed experiment, 50% were assigned to take a placebo. If the use of aspirin or placebo was independent of risk of myocardial infarction (i.e. if the risk of myocardial infarction was no different whether you took placebo or aspirin), what would the expected counts be in each cell (n11, n12, n21, and n22)?
+
+-   It appears that the overall probability of having a Myocardial Infarction is .0127 and the total sample is $N=20,105$ which the design experiment split the random sample evenly between the two conditions. We can assume that the risk of Myocardial infarction is the same regardless of condition.
+
+<!-- -->
+
+-   We calculate the expected frequencies for the expected frequencies for having disease by both conditions, and not having the disease by both conditions. The expected frequencies for having the disease regardless of condition is 128, and not having the disease in the placebo group the expected frequency is 9,924, and the expected frequency for not having the disease in the aspirin group is 9,925.
 
 ```{r}
 # calculate placebo expectation, disease proportion * totaL placebo group
@@ -293,13 +303,3 @@ colnames(expected_freq) <- c("Yes", "No")
 
 addmargins(expected_freq)
 ```
-
-
-
-
-
-
-
-
-
-
