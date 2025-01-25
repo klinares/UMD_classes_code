@@ -89,7 +89,7 @@ $$
 ```{r}
 gtrends <- gtrends |> 
   # add new column with expected frequencies
-  mutate(expected = round(sum(film_noir)/n(), 0)) 
+  mutate(expected = sum(film_noir)/n()) 
 
 # print data table
 gtrends
@@ -168,7 +168,8 @@ steps <-  steps |>
 
 # print columns of interest
 steps |> 
-  select(days, p_hat)
+  select(days, p_hat) |> 
+  mutate(p_hat =  round(p_hat, 2))
 ```
 
 \
@@ -197,7 +198,7 @@ steps <- steps  |>
   var_p = round(diag(var_p), 6)
 )
 
-steps
+steps 
 ```
 
 -   We calculate MLE variances $\hat{V}(\hat{p})$ for each $\hat{p}$ and include it to our data table.
@@ -218,7 +219,7 @@ steps
     ) 
 ```
 
--   The MLE proportion of steps was .35 with an estimated MLE variance of .000001.
+-   The MLE proportion of steps was .35 with an estimated MLE variance of .00001.
 
 \
 
