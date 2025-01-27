@@ -82,8 +82,15 @@ summary(y_test)
 As a nice illustration of our prediction problem, we can use `qmap()` to build a map of Chicago and then plot the crime incidents colored by `arrest` on top.
 
 ```{r,  message=FALSE, warning=FALSE}
+api_keys <- read_csv("~/repos/api-keys.csv")
+
+register_stadiamaps(api_keys |> 
+                      filter(key_id == "stadiamaps_key") |> 
+                      pull(key) )
+
+
 bbox <- c(left = -87.896805, bottom = 41.677015, right = -87.409286, top = 42.082936)
-map <- get_stamenmap(bbox = bbox, zoom = 12, maptype = "toner-hybrid")
+map <-get_stadiamap(bbox = bbox, zoom = 12, maptype = "stamen_terrain")
 map <- ggmap(map)
 ```
 
