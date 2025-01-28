@@ -28,7 +28,7 @@ library(pROC)
 
 For this notebook we use data on incidents of crime in the City of Chicago. This data "... is extracted from the Chicago Police Department's CLEAR (Citizen Law Enforcement Analysis and Reporting) system." It contains a number of basic information about each crime incident, such as date, location, type and whether there was an arrest. Here we only pull in data from January 2018.
 
-Source: https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2
+Source: <https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2>
 
 ```{r}
 ccj2018 <- read.socrata("https://data.cityofchicago.org/resource/6zsd-86xi.json?$where=date between '2018-01-01' and '2018-01-31'")
@@ -50,7 +50,7 @@ ccj2018 <- subset(ccj2018, complete.cases(ccj2018[,c(9,20,21)]))
 
 ## Train and test set
 
-###
+### 
 
 Next, we split the data into a train and test set.
 
@@ -70,7 +70,7 @@ y_train <- ccj2018[train,9]
 y_test <- ccj2018[-train,9]
 ```
 
-###
+### 
 
 A quick look at our outcome variable.
 
@@ -101,7 +101,7 @@ map +
 
 ## kNN
 
-###
+### 
 
 In order to find a useful kNN setup, we tune k using 10-Fold Cross-Validation. This can be done e.g. with `tune.knn()`.
 
@@ -112,7 +112,7 @@ summary(tune)
 plot(tune)
 ```
 
-###
+### 
 
 Seems like `k = 21` is a good choice. We pass this information to `knn()`, together with X from the test data. Note that the resulting object are the test set predictions, since with kNN there is no separate model to be stored.
 
@@ -120,7 +120,7 @@ Seems like `k = 21` is a good choice. We pass this information to `knn()`, toget
 y_knn <- knn(X_train, X_test, y_train, k = 21, prob = TRUE)
 ```
 
-###
+### 
 
 We can also add a logistic regression model for comparison, although this is unlikely to perform well given the prediction task at hand.
 
@@ -129,7 +129,7 @@ logit <- glm(arrest ~ latitude + longitude, data = c_train, family = binomial)
 summary(logit)
 ```
 
-###
+### 
 
 Given the `logit` object, we can generate predicted risk scores for the test set and transform those into predicted classes. Note that we are using an arbitrary classification threshold (0.5), which might not be the best option.
 
@@ -228,4 +228,4 @@ confusionMatrix(y_knn2, y_test, mode = "everything", positive = "TRUE")
 
 ## References
 
-* https://dev.socrata.com/foundry/data.cityofchicago.org/6zsd-86xi
+-   <https://dev.socrata.com/foundry/data.cityofchicago.org/6zsd-86xi>
