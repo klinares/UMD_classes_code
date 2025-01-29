@@ -1,19 +1,13 @@
 ---
 title: "Performance measures & kNN"
-output: 
-  learnr::tutorial:
-    progressive: true
-runtime: shiny_prerendered
-tutorial:
-  id: "knn"
-  version: 0.5
+output: pdf
 ---
 
 ## Setup
 
 ```{r results='hide', message=FALSE, warning=FALSE}
 # devtools::install_github("dkahle/ggmap")
-library(learnr)
+#library(learnr)
 library(RSocrata)
 library(ggplot2)
 library(ggmap) 
@@ -22,6 +16,7 @@ library(class)
 library(caret)
 library(PRROC)
 library(pROC)
+library(tidyverse)
 ```
 
 ### Data
@@ -107,17 +102,24 @@ In order to find a useful kNN setup, we tune k using 10-Fold Cross-Validation. T
 
 ```{r}
 set.seed(761)
-tune <- tune.knn(X_train, y_train, k = 1:25, tunecontrol = tune.control(sampling = "cross"), cross = 10)
+tune <- tune.knn(X_train, y_train, 
+                 # k takes 1 to 25
+                 k = seq(1, 50, 2), 
+                 # 10 fold cross validation
+                 tunecontrol = tune.control(sampling = "cross"), cross = 10)
 summary(tune)
+
+# used to tune value, choose lowest error
+# about 20% of the time we were wrong on our predictions
 plot(tune)
 ```
 
 ### 
 
-Seems like `k = 21` is a good choice. We pass this information to `knn()`, together with X from the test data. Note that the resulting object are the test set predictions, since with kNN there is no separate model to be stored.
+Seems like `k = 23` is a good choice. We pass this information to `knn()`, together with X from the test data. Note that the resulting object are the test set predictions, since with kNN there is no separate model to be stored.
 
 ```{r}
-y_knn <- knn(X_train, X_test, y_train, k = 21, prob = TRUE)
+y_knn <- knn(X_train, X_test, y_train, k = 23, prob = TRUE)
 ```
 
 ### 
