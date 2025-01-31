@@ -20,18 +20,18 @@ knitr::opts_chunk$set(echo=TRUE,cache=TRUE,
                       message=FALSE, warning=FALSE,
                       fig.width=4.5, fig.height=3)
 
-pacman::p_load(epiR, DescTools, tidyverse)
+pacman::p_load(epiR, DescTools, epiR, tidyverse)
 
 options(scipen=999)
 ```
 
 1.  A researcher who wants to study the predictors of lung cancer draws a sample of persons with lung cancer from a database of lung cancer patients and a sample of persons without lung cancer from the general population. Is this a prospective or retrospective study?
 
-    1.  Given that the researcher has access to a database of individuals whom have lung cancer, it appears that they are sampling on the outcome of interest (lunch cancer) which suggest that this is a retrospective study. It is so because the event has already occurred and the researcher is investigating potential risk factors for this disease by using existing data.
+    1.  Given that the researcher has access to a database of individuals whom have lung cancer, it appears that they are sampling on the outcome of interest (lung cancer) which suggest that this is a retrospective study. It is so because the event has already occurred and the researcher is investigating potential risk factors for this disease by using existing data.
 
 2.  A researcher who wants to study the impact of Vitamin D on children’s health draws a sample of children, randomly splits them into two groups and gives one group Vitamin D and the other group a placebo. Is this a prospective or retrospective study?
 
-    1.  This is an example of a prospective study where random sampling and random selection is the basis of the study in order to study the effects of an intervention on an outcome of interest that is to be measured at a later point in time. This study likely follows these two child cohorts (control vs treated) to investigate outcome results overtime.\
+    1.  This is an example of a prospective study where random sampling and random selection is the basis of the study in order to study the effects of an intervention on an outcome of interest that is to be measured at a later point in time. This study likely follows these two child cohorts (control vs treated) to investigate outcome results overtime.
 
 \
 
@@ -58,7 +58,7 @@ matrix_ct_margins
 
 ```
 
--   a\) Estimate the relative risk of responding (plea for help vs not), and report a 95% confidence interval for log-relative risk.
+a\) Estimate the relative risk of responding (plea for help vs not), and report a 95% confidence interval for log-relative risk.
 
 $$
 RR = \ln (\frac{n_{11}/n_{1+}}{n_{21}/n_{2+}} )
@@ -80,6 +80,8 @@ $$
 RR <- (matrix_ct_margins[1,1] / matrix_ct_margins[1,3])  /
   (matrix_ct_margins[2,1] / matrix_ct_margins[2,3])
 
+print(str_c("Printing Relative Risk . . . ", RR))
+
 # calculate variance w/ above formula
 var_RR <- ((matrix_ct_margins[1,2]/matrix_ct_margins[1,3]) / 
                matrix_ct_margins[1, 1]) +
@@ -91,22 +93,29 @@ var_RR <- ((matrix_ct_margins[1,2]/matrix_ct_margins[1,3]) /
 lower <- exp(log(RR) - 1.96 * sqrt(var_RR))
 upper <- exp(log(RR) + 1.96 * sqrt(var_RR)) 
 
+print(str_c("Printing 95% CI . . . [", lower, ", ", upper, "]"))
 ```
 
 -   We estimate the relative risk for responding to the survey for the two conditions to be `r round(RR, 2)` with a 95% confidence interval between \[`r round(lower, 2)`,`r round(upper, 2)`\].
 
-------------------------------------------------------------------------
+\newpage
 
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+::: callout-note
 -   We can check our work by using the epiR package as the example in the lecture.
+:::
 
 ```{r}
 epi_object <- epiR::epi.2by2(matrix_ct)
 epi_object$massoc.summary[1,]
 ```
 
-------------------------------------------------------------------------
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
--   b\) Estimate the odds ratio (plea for help vs not), and report a 95% confidence interval for the log-odds ratio.
+\
+
+b\) Estimate the odds ratio (plea for help vs not), and report a 95% confidence interval for the log-odds ratio.
 
 $$
 Odds_{s_1} = \frac{\pi_{1|1}}{\pi_{2|1}} 
@@ -131,6 +140,8 @@ $$
 OR <- (matrix_ct[1,1] * matrix_ct[2,2]) / 
   (matrix_ct[2,1] * matrix_ct[1,2]) 
 
+print(str_c("Printing Odds Ratio . . . ", OR))
+
 # calculate variance for odds ratio
 var_OR <- (1/matrix_ct[1, 1]) + (1/matrix_ct[1, 2]) + 
   (1/matrix_ct[2, 1]) + (1/matrix_ct[2, 2]) 
@@ -139,13 +150,14 @@ var_OR <- (1/matrix_ct[1, 1]) + (1/matrix_ct[1, 2]) +
 lower <- exp(log(OR) - 1.96 * sqrt(var_OR)) 
 upper <- exp(log(OR) + 1.96 * sqrt(var_OR)) 
 
+print(str_c("Printing 95% CI . . . [", lower, ", ", upper, "]"))
 ```
 
 -   We estimate the odds ratio between the odds of responding to the survey when given and not given the treatment to be `r round(OR, 2)` with a 95% confidence interval between \[`r round(lower, 2)`,`r round(upper, 2)`\].
 
 \
 
--   c\) Summarize and interpret your findings from parts a) and b). Does the “plea for help” improve response rates?
+c\) Summarize and interpret your findings from parts a) and b). Does the “plea for help” improve response rates?
 
 -   Our odds ratio suggest that respondents who receiving a plea for help were `r round(OR, 2)` times more likely to respond to the survey than those that did not receive the plea. The relative risk of `r round(RR,2)` has a similar interpretation; however, both 95% confidence intervals included 1 (i.e., there is no difference in the risk \[RR\], or the odds of the event are the same\[OR\]). Responding to a survey is not more likely to occur if a plea of help message is given or not given.
 
@@ -153,7 +165,7 @@ upper <- exp(log(OR) + 1.96 * sqrt(var_OR))
 
 4.  
 
-a\)  The following table is loosely based upon a study of the impact of different types of incentives on survey response rates (Deutskens, et al., 2004). Cases were randomized to either receiver a voucher that the respondent could spend at specific online vendors, or a donation would be made on their behalf. The first question is whether vouchers produce lower or higher response rates relative to donations. Calculate the odds ratio of a voucher producing response relative to donation. Calculate the deviance ($G^2$).
+a\) The following table is loosely based upon a study of the impact of different types of incentives on survey response rates (Deutskens, et al., 2004). Cases were randomized to either receiver a voucher that the respondent could spend at specific online vendors, or a donation would be made on their behalf. The first question is whether vouchers produce lower or higher response rates relative to donations. Calculate the odds ratio of a voucher producing response relative to donation. Calculate the deviance ($G^2$).
 
 -   The likelihood ratio statistic $G^2$ is a statistical method used to compare the goodness-of-fit of two competing statistical models. It approximates the $\chi^2$ test statistic, and is expressed as:
 
@@ -180,6 +192,8 @@ matrix_ct
 # calculate OR
 OR <- (matrix_ct[1,1] * matrix_ct[2,2]) / (matrix_ct[2,1] * matrix_ct[1,2]) 
 
+print(str_c("Printing Odds Ratio . . . ", OR))
+
 # compute varaince and confidence intervals
 
 # calculate variance for odds ratio
@@ -190,17 +204,21 @@ var_OR <- (1/matrix_ct[1, 1]) + (1/matrix_ct[1, 2]) +
 lower <- exp(log(OR) - 1.96 * sqrt(var_OR)) 
 upper <- exp(log(OR) + 1.96 * sqrt(var_OR)) 
 
+print(str_c("Printing 95% CI . . . [", lower, ", ", upper, "]"))
 
 # we can calculate the expected frequencies using 
 ## (row total * column total) / N
 ### we can use the chi.square test to extract expected counts
 matrix_ct_exp <- chisq.test(matrix_ct)$expected 
 
-cat("Printing expected frequencies . . .")
+print("Printing expected frequencies . . .")
 matrix_ct_exp
 
 # calculate LRT using formula above
 LRT <- sum((2*matrix_ct)*log(matrix_ct/ (matrix_ct_exp)))
+
+print(str_c("Printing LRT . . . ", LRT))
+
 
 # confirm G estimate w/ r function from DescTools package
 #DescTools::GTest(matrix_ct)[1] 
@@ -239,6 +257,9 @@ matrix_ct_2
 OR_2 <- (matrix_ct_2[1,1] * matrix_ct_2[2,2]) / 
   (matrix_ct_2[2,1] * matrix_ct_2[1,2]) 
 
+print(str_c("Printing Odds Ratio . . . ", OR_2))
+
+
 # we can calculate the expected frequencies using 
 ## (row total * column total) / N
 ### we can use the chi.square test to extract expected counts
@@ -249,6 +270,7 @@ matrix_ct_exp_2
 
 # calculate LRT using formula above
 LRT_2 <- sum((2*matrix_ct_2)*log(matrix_ct_2 / (matrix_ct_exp_2)))
+print(str_c("Printing LRT . . . ", LRT_2))
 
 # we can calculate significant using the chi-squred distribution
 df_2 <- (1-nrow(matrix_ct_2)) * (1-ncol(matrix_ct_2))
