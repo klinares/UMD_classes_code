@@ -6,6 +6,7 @@ editor: visual
 
 ```{r results='hide', message=FALSE, warning=FALSE, echo=FALSE}
 library(viridis)
+library(survey)
 library(tidyverse)
 
 options(scipen=999)
@@ -29,6 +30,10 @@ N_female <- 2700
 n <- 400
 n_male <- 160
 n_female <- 240
+
+# yes to academia
+y_male <- 40
+y_female <- 84
 ```
 
 ### We can explore whether our samples of females and males approximates the proportion of females and males in the population they come from.
@@ -57,13 +62,13 @@ dat |>
 
 \
 
-## Calculating point estimates with poststratification
+## Calculating point estimates 
 
 -   In our sample there are 84 females and 40 males planning to pursue academic careers. If we compute an inference for the population proportion these will still need to be calibrated to correct for sampling variability.
 
 ```{r}
-p_hat_females <- 84/n_female ; p_hat_females
-p_hat_males <- 40/n_male ; p_hat_males
+p_hat_females <- y_female/n_female ; p_hat_females
+p_hat_males <- y_male/n_male ; p_hat_males
 
 ```
 
@@ -129,13 +134,49 @@ dat |>
 
 \
 
-# We propose that the population estimate from our sample to be 945 (SE=.029, \[95% CI: 789, 1,101\]) female and 325 (SE=.032, \[95% CI: 243, 407\]) male students are planign to pursue academic careers.
+# We propose that the population estimate from our sample to be 945 (SE=.029, \[95% CI: 789, 1,101\]) female and 325 (SE=.032, \[95% CI: 243, 407\]) male students are planing to pursue academic careers.
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ Test \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+\newpage
 
-### I don't understand how we can use the known populations 2,700 for females, and 1,300 for males, unless we use poststratified p_hats as below, but these would give us smaller numbers in the end. 
+## We check our work with the survey package:
+
+```{r, warning=FALSE, message=FALSE}
+
+
+# disaggregate stratified counts into dataframe
+survey_data <- data.frame(
+  gender = rep(c("Women", "Men"), c(n_female, n_male)),
+  academia = c(rep(1, 84), rep(0, 240 - 84), rep(1, 40), rep(0, 160 - 40))
+)
+
+# created survey design object with sample and pop counts
+d <- svydesign(id = ~1, data = survey_data,
+               strata = ~gender, 
+               fpc = rep(c(N_female, N_male), c(n_female, n_male)))
+
+# Estimate total number of students planning for academia
+total_academia <- svytotal(~academia, d)
+
+total_academia_women <- svytotal(~academia, subset(d, gender == "Women"))
+# Domain estimation for men
+total_academia_men <- svytotal(~academia, subset(d, gender == "Men"))
+# Compute degrees of freedom for each domain
+df_women <- degf(subset(d, gender == "Women"))
+df_men <- degf(subset(d, gender == "Men"))
+#CI
+print("Point estimate for females with 95% CI = ")
+total_academia_women
+confint(total_academia_women, level=.95, df=df_women)
+
+
+```
 
 ```{r}
-p_hat_females_post <- p_hat_females * (N_female / N) ; p_hat_females_post
-p_hat_males_post <- p_hat_males * (N_male / N) ; p_hat_males_post
+
+print("Point estimate for males with 95% CI = ")
+total_academia_men
+confint(total_academia_men, level=.95, df=df_men)
+
 ```
+
+-   We estimate the same 95% CI and point estimate for males and females. Our variance and SE is based on working with proportions instead of counts.
