@@ -1,7 +1,7 @@
 ---
 title: "epidemiology measures"
 author: "SURV686"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -46,9 +46,9 @@ $$
 RR = \frac{I_{Exposed}} {I_{Un-exposed}}
 $$
 
-$$
+\$\$
 
-$$
+\$\$
 
 ```{r}
 RR <- round(ir_exp / ir_unexp, 4) 
@@ -130,17 +130,47 @@ OR <- (a*d)/(b*c) ;  OR
 
 -   The odds ratio is slightly larger than the relative risk.
 
-Calculate the attributed risk in the exposed group.
+Calculate the attributed risk percent in the exposed group.
 
 $$
-\hat{A}_{Exposed} \frac{\hat{R}-1}{\hat{R}}
+\hat{ARP}_{Exposed} \frac{\hat{R}-1}{\hat{R}}
 $$
 
 ```{r}
-A_exposed <-  (R_hat - 1) / R_hat ; A_exposed
+ARP_exposed <-  (R_hat - 1) / R_hat ; ARP_exposed # fraction
 ```
 
--   The risk of the exposure on the outcome is almost 49% higher than the non exposed group.
+-   The amount of disease incidence is 49% which can be attributed to an exposure in a prospective study.
+-   This is also refereed to ARP, attributable risk percent when converting to a percent.
+
+The attributable risk (ratio) of the exposed is calculated as incidence of the exposed - incidence of the non-exposed.
+
+```{r}
+ir_exp <- a / (a+b) 
+ir_unexp <- c / (c+d) 
+AR_exposed <- ir_exp - ir_unexp ; AR_exposed 
+
+```
+
+To calculate 95% CI we would need to calculate the standard error as:
+
+$$
+SE_{AR} = \sqrt{ \frac{a+c}{N} (1 - \frac{a+c}{N} )
+(\frac{1}{a+b} + \frac{1}{c+d} })
+$$
+
+```{r}
+SE_AR <- sqrt(
+  ((a+c)/t)*(1-((a+c)/t )) * ( (1/(a+b)) + (1/(c+d)) )
+)
+
+(AR_exposed - 1.97*SE_AR) * 100 # lower
+(AR_exposed + 1.97*SE_AR) * 100 # Upper
+```
+
+When we use the `epiR::epi.2by2()`we can see these results under "Attrib prev in the exposed."
+
+\
 
 ### Calculate the attributable risk in the population
 
@@ -153,13 +183,14 @@ $$
 
 # reduction in incidence in the population that would
 # occur in the absence of the risk factor
-A_hat_pop <- (a*d - b*c) / ((a+c)* (c+d)) ; A_hat_pop
+A_hat_pop <- (a*d - b*c) / ((a+c)* (c+d)) ; A_hat_pop # fraction
 
 ```
 
--   The reduction in the outcome of 31% in the population that would occur in the absence of the exposure, or risk factor.
+-   This is the reduction in incidence of 31% if the whole population were unexposed, comparing with actual exposure.
+-   This is known as PARP, population attributable risk when converting to percent.
 
-## Calculate the variance of the attributable risk in the population. 
+## Calculate the variance of the attributable risk in the population.
 
 $$
 V(\ln(1-\hat{A}_{pop}) = \frac{b + \hat{A}_{pop}(a+d)}{tc}
@@ -169,16 +200,16 @@ $$
 V <- (b + A_hat_pop* (a+d)) / (t*c) ;  V
 ```
 
-### \
+###  
 
 ## In a retrospective study we use the OR instead of or relative risk, and calculate the attributable risk in the exposed group and population.
 
 ```{r}
 R_hat <- (a*d)/(b*c) ; R_hat
-A_exposed <-  (R_hat - 1) / R_hat ; A_exposed
+A_exposed <-  (R_hat - 1) / R_hat ; A_exposed # fraction
 ```
 
-##  
+## 
 
 ### For the population we change the denominator.
 
@@ -187,7 +218,7 @@ $$
 $$
 
 ```{r}
-A_hat_pop <- (a*d - b*c) / ( d * (a+c)) ; A_hat_pop
+A_hat_pop <- (a*d - b*c) / ( d * (a+c)) ; A_hat_pop # fraction
 ```
 
 ### The variance is also computed differently
@@ -231,7 +262,7 @@ UCL <- 1 - exp( A_hat_pop - 1.96 * sqrt(V) ) ; UCL
 ```{r}
 # create table for later
 bp <- matrix(c(a, b, c, d), ncol = 2, byrow = TRUE)
-epi.2by2(bp)
+epi.2by2(bp, method="cross.sectional")
 ```
 
 # 

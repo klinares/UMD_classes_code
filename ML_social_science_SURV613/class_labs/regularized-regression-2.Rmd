@@ -1,12 +1,7 @@
 ---
 title: "Regularized Regression II"
-output: 
-  learnr::tutorial:
-    progressive: true
-runtime: shiny_prerendered
-tutorial:
-  id: "regularized-regression-2"
-  version: 0.5
+output: pdf_document
+
 ---
 
 ## Setup

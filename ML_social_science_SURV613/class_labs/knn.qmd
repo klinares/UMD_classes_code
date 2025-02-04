@@ -1,6 +1,6 @@
 ---
 title: "Performance measures & kNN"
-output: pdf
+format: pdf
 ---
 
 ## Setup

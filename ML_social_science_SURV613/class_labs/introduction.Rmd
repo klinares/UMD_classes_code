@@ -1,13 +1,7 @@
 ---
 title: "Machine Learning for Social Science"
 subtitle: "Introduction, R & RStudio"
-output: 
-  learnr::tutorial:
-    progressive: true
-runtime: shiny_prerendered
-tutorial:
-  id: "introduction"
-  version: 0.5
+output: pdf_document
 ---
 
 ## Setup
@@ -23,7 +17,7 @@ We start by first installing some packages that we will need throughout this not
 Besides installing the packages, they also have to be loaded in order to be operational.
 
 ```{r}
-library(learnr)
+#library(learnr)
 library(tidyverse)
 library(GGally)
 library(mlbench)
@@ -98,9 +92,9 @@ View(boston[-(1:500), 1:2])
 Using index notation to access only specific variables or observations is an important tool as it can be used in conjunction with many different functions. It is therefore worthwhile to consider some basic examples.
 
 ```{r}
-boston[, 1]
-boston[, 1:5]
-boston[1:10, c(1:2,5)]
+# boston[, 1]
+# boston[, 1:5]
+# boston[1:10, c(1:2,5)]
 ```
 
 List all variable names of the Boston Housing data.

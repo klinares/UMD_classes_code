@@ -1,12 +1,6 @@
 ---
 title: "ML Basics"
-output: 
-  learnr::tutorial:
-    progressive: true
-runtime: shiny_prerendered
-tutorial:
-  id: "ml-basics"
-  version: 0.5
+output: pdf_document
 ---
 
 ## Setup
@@ -16,7 +10,6 @@ tutorial:
 Load needed packages.
 
 ```{r}
-library(learnr)
 library(mlbench)
 library(boot)
 library(tidymodels)
