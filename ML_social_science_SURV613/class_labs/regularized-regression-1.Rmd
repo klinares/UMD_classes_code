@@ -10,6 +10,8 @@ output: pdf_document
 library(mlbench)
 library(glmnet)
 library(caret)
+
+options(scipen=999)
 ```
 
 ### Data
@@ -43,6 +45,7 @@ summary(boston_test$medv)
 ## Regularized regression
 
 Now we can prepare our training data for the regularized regression models. The `glmnet` package needs models to be fitted on an X matrix and an y vector, which we need to generate first.
+-   function model.metrix is to get the features and no outcome. 
 
 ```{r}
 X <- model.matrix(medv ~ . - town - tract - cmedv,
@@ -76,6 +79,10 @@ plot(m1, label=T, xvar = "lambda")
 ```
 
 However, at this point we do not know which lambda leads to the best model. Defining "best" in terms of prediction performance for new data, Cross-Validation can be used for this task.
+
+-   For different lambdas we have a MSE. Very low values of log(lambda), close to 0 is OLS might be overfitting, close to infinity can be underfitting. We should expect to see a U shape. In this example, we do not have many features and those that are there have a strong relationship which in this case OLS is maybe not overfitting. 
+
+- Typically we prefer the simplest model within 1 sd of the lowest. 
 
 ```{r}
 m1_cv <- cv.glmnet(X, y, alpha = 0)
@@ -145,7 +152,7 @@ This matrix can be used in the `predict` function, along with the respective mod
 p_ridge <- predict(m1, s = bestlam1, newx = Xt)
 p_lasso <- predict(m2, s = bestlam2, newx = Xt)
 
-p_null <- predict(m2, s = 1e10, newx = Xt)
+p_null <- predict(m2, s = 1e10, newx = Xt) # lamba approximates infinity
 ```
 
 As a last step, let's look at the test MSE of our models.
